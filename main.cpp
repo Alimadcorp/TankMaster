@@ -28,13 +28,19 @@ int main() {
 
   // all variable declarations go here
   const short int ballPool = 2048;
-  bool isBall[ballPool];
+  bool isBall[ballPool] = {false};
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
       ballsVY[ballPool]; // want to creat an array list here
-  short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
-            frameCount = 0;
+  float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
+      _qBallVY[ballPool]; // use a queue of balls to insert. we make arraylist
+                          // operations after recieving all shot inputs
+  unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
+                     queueSize = 0,
+                     upperBall = 0; // ball to which we gotta draw
   float totalTime = 0.0f, ballRadius = 2.f, ballSpeed = 50.f;
   float mouseX = 0.f, mouseY = 0.f; // will be used a lot so declared here
+  unsigned long long int t = 0;     // tick
+  int frameCount = 0;
 
   // all object declarations go here
   CircleShape cannonball(ballRadius, ballPts);
@@ -85,8 +91,59 @@ int main() {
     totalTime += deltaTime;
     frameCount++;
 
+    // move balls from queue to main array
+    while (queueSize > 0) {
+      if (!isBall[nextBall]) { // keep looping until an empty slot is found
+        queueSize--;
+        ballsX[nextBall] = _qBallX[queueSize];
+        ballsY[nextBall] = _qBallY[queueSize];
+        ballsVX[nextBall] = _qBallVX[queueSize];
+        ballsVY[nextBall] = _qBallVY[queueSize];
+        isBall[nextBall] = true;
+        nextBall++;
+        upperBall++;
+        balls++;
+        if (upperBall >= ballPool) {
+          nextBall = 0;  // round trip
+          lowerBall = 0; // draw from beninging
+          upperBall = ballPool - 1;
+        }
+      } else {
+        nextBall = (nextBall + 1) % ballPool; // also round trip
+      }
+    }
+
+    if (t % 600 == 0 &&
+        balls != nextBall) { // every 600 ticks (usually 100 seconds)
+      // clear up the ball array to optimize
+      for (int i = 0; i < ballPool; i++) {
+        if (!isBall[i]) { // if the current slot is empty
+          while (!isBall[upperBall]) {
+            upperBall--; // move upperBall down to surely select the next
+                         // non-empty slot
+          }
+          // move the ball at the upper limit to the current slot
+          ballsX[i] = ballsX[upperBall];
+          ballsY[i] = ballsY[upperBall];
+          ballsVX[i] = ballsVX[upperBall];
+          ballsVY[i] = ballsVY[upperBall];
+          isBall[i] = true;
+          isBall[upperBall] = false;
+          upperBall--;
+        }
+      }
+      lowerBall = 0; // the cleanup ensures that the lower ball is always zero
+      while (!isBall[upperBall]) {
+        upperBall--;
+      }
+      balls = upperBall;
+      nextBall = upperBall + 1;
+    }
+
     // processing goes here
-    for (int i = 0; i < balls; i++) {
+    for (int i = lowerBall; i <= upperBall; i++) {
+      if (!isBall[i])
+        continue; // skip processing if theres no ball
       // velocity operations
       ballsX[i] += ballsVX[i] * deltaTime;
       ballsY[i] += ballsVY[i] * deltaTime;
@@ -121,12 +178,15 @@ int main() {
 
     // draw starts here
     window.clear();
-    for (int i = 0; i < balls; i++) {
+    for (int i = lowerBall; i <= upperBall; i++) {
+      if (!isBall[i])
+        continue;
       cannonball.setPosition({ballsX[i], ballsY[i]});
       window.draw(cannonball);
     }
     window.draw(fpsText);
     window.display();
+    t++; // tick a frame
   }
 
   return 0;
