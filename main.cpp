@@ -28,7 +28,8 @@ int main() {
 
   // all variable declarations go here
   const short int ballPool = 2048;
-  bool isBall[ballPool] = {false};
+  unsigned short int ballState[ballPool] = {
+      0}; // 0: absent, 1: present, >1: amount of reflections from walls + 1
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
       ballsVY[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
@@ -84,6 +85,11 @@ int main() {
         Vector2f worldPos = window.mapPixelToCoords(evnt->position);
         mouseX = worldPos.x;
         mouseY = worldPos.y;
+        _qBallX[queueSize] = mouseX;
+        _qBallY[queueSize] = mouseY;
+        _qBallVX[queueSize] = mouseX - static_cast<float>(width) / 2;
+        _qBallVY[queueSize] = mouseY - static_cast<float>(height) / 2;
+        queueSize++;
       }
     }
     // deltaTime calc
@@ -93,13 +99,13 @@ int main() {
 
     // move balls from queue to main array
     while (queueSize > 0) {
-      if (!isBall[nextBall]) { // keep looping until an empty slot is found
+      if (!ballState[nextBall]) { // keep looping until an empty slot is found
         queueSize--;
         ballsX[nextBall] = _qBallX[queueSize];
         ballsY[nextBall] = _qBallY[queueSize];
         ballsVX[nextBall] = _qBallVX[queueSize];
         ballsVY[nextBall] = _qBallVY[queueSize];
-        isBall[nextBall] = true;
+        ballState[nextBall] = 1;
         nextBall++;
         upperBall++;
         balls++;
@@ -117,25 +123,25 @@ int main() {
         balls != nextBall) { // every 600 ticks (usually 100 seconds)
       // clear up the ball array to optimize
       for (int i = 0; i <= upperBall; i++) {
-        if (!isBall[i]) { // if the current slot is empty
-          while (upperBall > i && !isBall[upperBall]) {
+        if (!ballState[i]) { // if the current slot is empty
+          while (upperBall > i && !ballState[upperBall]) {
             upperBall--; // move upperBall down to surely select the next
                          // non-empty slot
           }
-          if (upperBall > i && isBall[upperBall]) {
+          if (upperBall > i && ballState[upperBall]) {
             // move the ball at the upper limit to the current slot
             ballsX[i] = ballsX[upperBall];
             ballsY[i] = ballsY[upperBall];
             ballsVX[i] = ballsVX[upperBall];
             ballsVY[i] = ballsVY[upperBall];
-            isBall[i] = true;
-            isBall[upperBall] = false;
+            ballState[i] = 1;
+            ballState[upperBall] = 0;
             upperBall--;
           }
         }
       }
       lowerBall = 0; // the cleanup ensures that the lower ball is always zero
-      while (upperBall > 0 && !isBall[upperBall]) {
+      while (upperBall > 0 && !ballState[upperBall]) {
         upperBall--;
       }
       balls = upperBall;
@@ -144,7 +150,7 @@ int main() {
 
     // processing goes here
     for (int i = lowerBall; i <= upperBall; i++) {
-      if (!isBall[i])
+      if (!ballState[i])
         continue; // skip processing if theres no ball
       // velocity operations
       ballsX[i] += ballsVX[i] * deltaTime;
@@ -153,18 +159,35 @@ int main() {
       if (ballsX[i] + ballRadius > 500.f) {
         ballsX[i] = 500.f - ballRadius;
         ballsVX[i] *= -1.f;
+        ballState[i]++; // increment reflections
       }
       if (ballsY[i] + ballRadius > 500.f) {
         ballsY[i] = 500.f - ballRadius;
         ballsVY[i] *= -1.f;
+        ballState[i]++;
       }
       if (ballsX[i] - ballRadius < 0) {
         ballsX[i] = ballRadius;
         ballsVX[i] *= -1.f;
+        ballState[i]++;
       }
       if (ballsY[i] - ballRadius < 0) {
         ballsY[i] = ballRadius;
         ballsVY[i] *= -1.f;
+        ballState[i]++;
+      }
+      if (ballState[i] > 2) {
+        ballState[i] = 0;
+        if (upperBall == i) {
+          while (upperBall > 0 && !ballState[upperBall]) {
+            upperBall--;
+          }
+        } else if (lowerBall == i) {
+          while (lowerBall < ballPool && !ballState[lowerBall]) {
+            lowerBall++;
+          }
+          lowerBall %= ballPool;
+        }
       }
     }
     if (totalTime >= 1.0f) {
@@ -181,7 +204,7 @@ int main() {
     // draw starts here
     window.clear();
     for (int i = lowerBall; i <= upperBall; i++) {
-      if (!isBall[i])
+      if (!ballState[i])
         continue;
       cannonball.setPosition({ballsX[i], ballsY[i]});
       window.draw(cannonball);
