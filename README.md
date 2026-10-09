@@ -53,6 +53,13 @@ A tank can shoot a cannonball from it's ammo, which has a size of 5, and refills
 - Provide a pause menu and option to resume the game or exit to main menu, or provide further options. The gameplay doesn't pause in case of multiplayer.
 - Management and dynamic scaling of window in case of WindowResize events.
 
+**Limitations**:
+- Use of functions is not allowed
+- Use of arrays greater than 1D is not allowed
+- Use of more than one file is impossible as functions are not allowed
+- Use of custom classes or data structures is not allowed
+- Use of any library except SFML/*.hpp is not allowed
+
 ## Use of AI
 
 In all good faith, I declare that no part of the code present in this repository was written by AI. It was either written by me, or any of my two team members. Help from AI in case of errors may have been taken.
