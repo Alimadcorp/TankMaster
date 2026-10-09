@@ -6,6 +6,8 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
+#define BALL_REFLECTIONS 3
+
 using namespace sf;
 using namespace std;
 
@@ -176,7 +178,7 @@ int main() {
         ballsVY[i] *= -1.f;
         ballState[i]++;
       }
-      if (ballState[i] > 2) {
+      if (ballState[i] > BALL_REFLECTIONS) {
         ballState[i] = 0;
         if (upperBall == i) {
           while (upperBall > 0 && !ballState[upperBall]) {
