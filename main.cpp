@@ -1,5 +1,6 @@
 #include<SFML/Graphics.hpp>
 #include<SFML/OpenGL.hpp>
+#include<sstream>
 
 using namespace sf;
 using namespace std;
@@ -22,7 +23,7 @@ int main() {
 
     // all variable declarations go here
     float ballsX[2048], ballsY[2048], ballsVX[2048], ballsVY[2048], ballRadius = 5.f, ballSpeed = 50.f;
-    int balls = 10, ballPts = 32, frameCount = 0;
+    short int balls = 10, nextBall = 0, ballPts = 32, frameCount = 0;
     float totalTime = 0.0f;
     
     // all object declarations go here
@@ -38,11 +39,12 @@ int main() {
     fpsText.setFillColor(sf::Color::Green);
     fpsText.setPosition({10.f, 10.f});
     
-    for (int i = 0; i < balls; i++) {
-        ballsX[i] = 100 + i * 10;
-        ballsY[i] = 100 + i * 10;
-        ballsVX[i] = ballSpeed;
-        ballsVY[i] = ballSpeed + i * ballSpeed;
+    while (nextBall < balls) {
+        ballsX[nextBall] = 100 + nextBall * 10;
+        ballsY[nextBall] = 100 + nextBall * 10;
+        ballsVX[nextBall] = ballSpeed;
+        ballsVY[nextBall] = ballSpeed + nextBall * ballSpeed;
+        nextBall++;
     }
 
     // main loop
@@ -51,25 +53,21 @@ int main() {
         while (const optional event = window.pollEvent()) {
             // manage close and resize
             if (event -> is<Event::Closed>()) window.close();
-            else if (const auto* resized = event->getIf<sf::Event::Resized>()) {
-                width = resized->size.x;
-                height = resized->size.y;
-                View view = window.getView();
-                // apparently we gotta update the view size
-                view.setSize({static_cast<float>(width), static_cast<float>(height)});
-                view.setCenter({width / 2.f, height / 2.f}); // and set the center
-                window.setView(view); // and then set the view to the window
-            }
             // mouse events
-            else if (const auto* evnt = event->getIf<Event::MouseButtonPressed>())
+            else if (const auto* evnt = event->getIf<Event::MouseMoved>())
             {
-                if (evnt->button == Mouse::Button::Left)
+                if (true)
                 {
-                    ballsX[balls] = evnt->position.x;
-                    ballsY[balls] = evnt->position.y;
-                    ballsVX[balls] = width/2 - evnt->position.x;
-                    ballsVY[balls] = height/2 - evnt->position.y;
-                    balls++;
+                    // convert screen pixel position to world coordinates
+                    // this is initially effect less, but as soon as we scale or resize the view,
+                    // the pixel position is no longer equivalent to world position
+                    Vector2f worldPos = window.mapPixelToCoords(evnt->position);
+                    ballsX[nextBall] = worldPos.x;
+                    ballsY[nextBall] = worldPos.y;
+                    ballsVX[nextBall] = 250.f - worldPos.x;
+                    ballsVY[nextBall] = 250.f - worldPos.y;
+                    nextBall++; balls++;
+                    if (nextBall >= 2048) { nextBall = 0; }
                 }
             }
         }
@@ -83,12 +81,12 @@ int main() {
             ballsX[i] += ballsVX[i] * deltaTime;
             ballsY[i] += ballsVY[i] * deltaTime;
             // reflect from walls
-            if (ballsX[i] + ballRadius > width) {
-                ballsX[i] = width - ballRadius;
+            if (ballsX[i] + ballRadius > 500.f) {
+                ballsX[i] = 500.f - ballRadius;
                 ballsVX[i] *= -1.f;
             }
-            if (ballsY[i] + ballRadius > height) {
-                ballsY[i] = height - ballRadius;
+            if (ballsY[i] + ballRadius > 500.f) {
+                ballsY[i] = 500.f - ballRadius;
                 ballsVY[i] *= -1.f;
             }
             if (ballsX[i] - ballRadius < 0) {
