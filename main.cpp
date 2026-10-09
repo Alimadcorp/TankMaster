@@ -62,7 +62,7 @@ int main() {
                     // this is initially effect less, but as soon as we scale or resize the view,
                     // the pixel position is no longer equivalent to world position
                     Vector2f worldPos = window.mapPixelToCoords(evnt->position);
-                    ballsX[nextBall] = worldPos.x;
+                    ballsX[nextBall] = worldPos.x; // hehe
                     ballsY[nextBall] = worldPos.y;
                     ballsVX[nextBall] = 250.f - worldPos.x;
                     ballsVY[nextBall] = 250.f - worldPos.y;
