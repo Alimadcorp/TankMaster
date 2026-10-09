@@ -14,8 +14,9 @@ int main() {
     settings.majorVersion = 3;
     settings.minorVersion = 0;
     RenderWindow window(VideoMode({width, height}), "TankMaster", Style::Default, State::Windowed, settings);
-    //window.setVerticalSyncEnabled(true);
-    //window.setFramerateLimit(300);
+    // window.setVerticalSyncEnabled(true); 
+    // // enabled in prod, but disabled beforehand to keep track of optimizations
+    // window.setFramerateLimit(300);
     glEnable(GL_TEXTURE_2D);
     Clock clock;
 
@@ -26,7 +27,6 @@ int main() {
     
     // all object declarations go here
     CircleShape ball(ballRadius, ballPts);
-    RectangleShape glass({0.f, 0.f});
     Font mojangles("mojangles.ttf");
     Text fpsText(mojangles);
 
@@ -34,8 +34,6 @@ int main() {
     // all object property edits go here
     ball.setFillColor(Color::White);
     ball.setOrigin({ballRadius, ballRadius}); // draw from center
-    glass.setFillColor(Color(0, 0, 0, 5));
-    glass.setSize({width, height});
     fpsText.setCharacterSize(24);
     fpsText.setFillColor(sf::Color::Green);
     fpsText.setPosition({10.f, 10.f});
@@ -61,8 +59,6 @@ int main() {
                 view.setSize({static_cast<float>(width), static_cast<float>(height)});
                 view.setCenter({width / 2.f, height / 2.f}); // and set the center
                 window.setView(view); // and then set the view to the window
-                // and set the tracer size too
-                glass.setSize({static_cast<float>(width), static_cast<float>(height)});
             }
             // mouse events
             else if (const auto* evnt = event->getIf<Event::MouseButtonPressed>())
@@ -118,7 +114,6 @@ int main() {
 
         // draw starts here
         window.clear();
-        // window.draw(glass);
         for (int i = 0; i < balls; i++) {
             ball.setPosition({ballsX[i], ballsY[i]});
             window.draw(ball);
