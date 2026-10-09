@@ -116,28 +116,30 @@ int main() {
     if (t % 600 == 0 &&
         balls != nextBall) { // every 600 ticks (usually 100 seconds)
       // clear up the ball array to optimize
-      for (int i = 0; i < ballPool; i++) {
+      for (int i = 0; i <= upperBall; i++) {
         if (!isBall[i]) { // if the current slot is empty
-          while (!isBall[upperBall]) {
+          while (upperBall > i && !isBall[upperBall]) {
             upperBall--; // move upperBall down to surely select the next
                          // non-empty slot
           }
-          // move the ball at the upper limit to the current slot
-          ballsX[i] = ballsX[upperBall];
-          ballsY[i] = ballsY[upperBall];
-          ballsVX[i] = ballsVX[upperBall];
-          ballsVY[i] = ballsVY[upperBall];
-          isBall[i] = true;
-          isBall[upperBall] = false;
-          upperBall--;
+          if (upperBall > i && isBall[upperBall]) {
+            // move the ball at the upper limit to the current slot
+            ballsX[i] = ballsX[upperBall];
+            ballsY[i] = ballsY[upperBall];
+            ballsVX[i] = ballsVX[upperBall];
+            ballsVY[i] = ballsVY[upperBall];
+            isBall[i] = true;
+            isBall[upperBall] = false;
+            upperBall--;
+          }
         }
       }
       lowerBall = 0; // the cleanup ensures that the lower ball is always zero
-      while (!isBall[upperBall]) {
+      while (upperBall > 0 && !isBall[upperBall]) {
         upperBall--;
       }
       balls = upperBall;
-      nextBall = upperBall + 1;
+      nextBall = (upperBall + 1) % ballPool;
     }
 
     // processing goes here
