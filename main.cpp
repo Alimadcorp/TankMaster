@@ -1,5 +1,9 @@
-#include<SFML/Graphics.hpp>
 #include<SFML/OpenGL.hpp>
+#include<SFML/Graphics.hpp>
+#include<SFML/Window.hpp>
+#include<SFML/System.hpp>
+#include<SFML/Network.hpp>
+#include<SFML/Audio.hpp>
 
 using namespace sf;
 using namespace std;
@@ -17,7 +21,7 @@ int main() {
     // window.setVerticalSyncEnabled(true); 
     // // enabled in prod, but disabled beforehand to keep track of optimizations
     // window.setFramerateLimit(300);
-    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D); // open GL!
     Clock clock;
 
     // all variable declarations go here
@@ -60,9 +64,8 @@ int main() {
                     // this is initially effect less, but as soon as we scale or resize the view,
                     // the pixel position is no longer equivalent to world position
                     Vector2f worldPos = window.mapPixelToCoords(evnt->position);
-                    mouseX = worldPos.x; // hehe
+                    mouseX = worldPos.x;
                     mouseY = worldPos.y;
-                    if (nextBall >= 2048) { nextBall = 0; }
             }
         }
         // deltaTime calc
