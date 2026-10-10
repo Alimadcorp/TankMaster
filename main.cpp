@@ -8,7 +8,7 @@
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
 #define purrrr                  /* purrrrrrrrrrrrrr */
-#define BALL_REFLECTIONS 3      // this is max amt of ball reflections
+#define BALL_REFLECTIONS 30      // this is max amt of ball reflections
 #define BALL_SPEED 300.f        // pixels per second
 #define TANK_SPEED 200.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
@@ -274,7 +274,7 @@ int main() {
     totalTime += deltaTime;
     frameCount++;
 
-    // BALL STORAGE MANAGEMENT MWAHAHAHAHAH
+    // BALL QUEUE MANAGEMENT MWAHAHAHAHAH
     if (layer == 1) {
       // move balls from QUEUE to main array
       while (queueSize > 0) {
@@ -303,7 +303,7 @@ int main() {
         }
       }
 
-      // --- DATA STORAGE OPTIMIZATION ---
+      // --- ARRAY CLEANUP ---
       if (t % 600 == 0 && balls != nextBall && lowerBall != 0 &&
           upperBall != balls - 1) { // every 600 ticks (usually 10 seconds)
         // clear up the ball array to optimize
@@ -445,6 +445,31 @@ int main() {
           ballState[i]++;
         }
         ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]); // calculate angle
+
+        for (int r = 0; r < 10; r++) {
+          float dx = ballsX[i] - rocks[r].x;
+          float dy = ballsY[i] - rocks[r].y;
+          float d = dx * dx + dy * dy;
+          float minD = ballRadius + ROCK_HIT_RADIUS;
+
+          if (d < minD * minD && d > 0.0001f) {
+            float dist = sqrt(d);
+            float nx = dx / dist; // normal vector
+            float ny = dy / dist;
+            float dot =
+                ballsVX[i] * nx +
+                ballsVY[i] * ny; // dot of velocity and normal of collision
+            ballsVX[i] -= 2.f * dot * nx;
+            ballsVY[i] -= 2.f * dot * ny;
+            float ovrlap = minD - dist;
+            ballsX[i] += nx * ovrlap;
+            ballsY[i] +=
+                ny * ovrlap; // remove overlap to avoid balls being stuck
+            ballState[i]++;
+            ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]);
+          }
+        }
+
         // collide with tanks
         for (int j = lowerTank; j <= upperTank; j++) {
           if (isTankGreen[ballSource[i]] == isTankGreen[j])
@@ -607,7 +632,7 @@ int main() {
           window.draw(redTank);
         }
         // draw the ammobars
-        ammoBar.setTexture(ammoT[tankAmmo[i]]);
+        ammoBar.setTexture(ammoT[tankAmmo[i] % 6]);
         ammoBar.setPosition({tankX[i], tankY[i] + 40.f});
         ammoBar.setColor(Color(255, 255, 255, tankCooldown[i] > 0 ? 123 : 255));
         window.draw(ammoBar);
