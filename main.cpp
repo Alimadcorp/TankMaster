@@ -4,7 +4,9 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#if defined(WIN_32)
 #include <cmath>
+#endif
 
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
