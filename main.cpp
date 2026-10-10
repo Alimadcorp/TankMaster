@@ -166,24 +166,11 @@ int main() {
   ammoBar.setScale({1.3f, 1.3f});
   button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
-  redText.setCharacterSize(36);
-  greenText.setCharacterSize(36);
-  timeText.setCharacterSize(36);
   rock1.setTextureRect(IntRect({0, 0}, {11, 9}));
   rock2.setTextureRect(IntRect({1, 11}, {11, 10}));
   rock3.setTextureRect(IntRect({0, 22}, {12, 10}));
   fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
-  redText.setFillColor(sf::Color::Red);
-  redText.setOutlineColor(Color::Black);
-  redText.setOutlineThickness(1);
-  redText.setPosition({width - 10.f, height - 40.f});
-  greenText.setFillColor(sf::Color::Green);
-  greenText.setPosition({10.f, height - 40.f});
-  greenText.setOutlineColor(Color::Black);
-  greenText.setOutlineThickness(1);
-  purrrr timeText.setFillColor(sf::Color::Black);
-  timeText.setPosition({float(width) / 2.f, 20.f});
   rock1.setScale({3.f, 3.f});
   rock2.setScale({3.f, 3.f});
   rock3.setScale({3.f, 3.f});
@@ -585,6 +572,19 @@ int main() {
             // Initiate match
             layer = 1;
             timeLeft = CLOCK_TIME;
+            redText.setCharacterSize(36);
+            greenText.setCharacterSize(36);
+            timeText.setCharacterSize(36);
+            redText.setFillColor(sf::Color::Red);
+            redText.setOutlineColor(Color::Black);
+            redText.setOutlineThickness(1);
+            redText.setPosition({width - 10.f, height - 40.f});
+            greenText.setFillColor(sf::Color::Green);
+            greenText.setPosition({10.f, height - 40.f});
+            greenText.setOutlineColor(Color::Black);
+            greenText.setOutlineThickness(1);
+            purrrr timeText.setFillColor(sf::Color::Black);
+            timeText.setPosition({float(width) / 2.f, 20.f});
             // this would be offline mode
             onlineMode = false;
             tankX[0] = 100; // lower left of screen
@@ -720,8 +720,8 @@ int main() {
         window.draw(greenText);
       } else {
         timeText.setCharacterSize(64);
-        timeText.setString("Draw between both sides with " + to_string(redKills) +
-                            " kills!");
+        timeText.setString("Draw between both sides with " +
+                           to_string(redKills) + " kills!");
         FloatRect w = timeText.getLocalBounds();
         timeText.setOrigin({w.size.x / 2, w.size.y / 2});
         timeText.setPosition({width / 2.f, height * 1.f / 3.f});
