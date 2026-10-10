@@ -19,7 +19,7 @@
 #define TANK_COOLDOWN 0.5f
 #define MAX_BUTTONS 100
 #define MAX_GLARES 10
-#define CLOCK_TIME 120 // seconds
+#define CLOCK_TIME 20 // seconds
 #define PORT 6767
 #define PI                                                                     \
   3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067 // 100 digits of pi
@@ -166,8 +166,8 @@ int main() {
   ammoBar.setScale({1.3f, 1.3f});
   button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
-  redText.setCharacterSize(24);
-  greenText.setCharacterSize(24);
+  redText.setCharacterSize(36);
+  greenText.setCharacterSize(36);
   timeText.setCharacterSize(36);
   rock1.setTextureRect(IntRect({0, 0}, {11, 9}));
   rock2.setTextureRect(IntRect({1, 11}, {11, 10}));
@@ -177,9 +177,9 @@ int main() {
   redText.setFillColor(sf::Color::Red);
   redText.setOutlineColor(Color::Black);
   redText.setOutlineThickness(1);
-  redText.setPosition({width - 10.f, height - 10.f});
+  redText.setPosition({width - 10.f, height - 40.f});
   greenText.setFillColor(sf::Color::Green);
-  greenText.setPosition({10.f, height - 10.f});
+  greenText.setPosition({10.f, height - 40.f});
   greenText.setOutlineColor(Color::Black);
   greenText.setOutlineThickness(1);
   purrrr timeText.setFillColor(sf::Color::Black);
@@ -701,6 +701,33 @@ int main() {
       redText.setOrigin({redText.getLocalBounds().size.x, 0.f}); // right align
       window.draw(greenText);
       window.draw(redText);
+    }
+    if (layer == 2) {
+      if (redKills > greenKills) {
+        redText.setCharacterSize(64);
+        redText.setString("Red won with " + to_string(redKills) + " kills!");
+        FloatRect w = redText.getLocalBounds();
+        redText.setOrigin({w.size.x / 2, w.size.y / 2});
+        redText.setPosition({width / 2.f, height * 1.f / 3.f});
+        window.draw(redText);
+      } else if (redKills < greenKills) {
+        greenText.setCharacterSize(64);
+        greenText.setString("Green won with " + to_string(greenKills) +
+                            " kills!");
+        FloatRect w = greenText.getLocalBounds();
+        greenText.setOrigin({w.size.x / 2, w.size.y / 2});
+        greenText.setPosition({width / 2.f, height * 1.f / 3.f});
+        window.draw(greenText);
+      } else {
+        timeText.setCharacterSize(64);
+        timeText.setString("Draw between both sides with " + to_string(redKills) +
+                            " kills!");
+        FloatRect w = timeText.getLocalBounds();
+        timeText.setOrigin({w.size.x / 2, w.size.y / 2});
+        timeText.setPosition({width / 2.f, height * 1.f / 3.f});
+        window.draw(timeText);
+      }
+      buttonLayer[0] = 2;
     }
     window.display(); // push the draw buffer to the view
     t++;              // tick a frame
