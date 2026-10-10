@@ -46,14 +46,13 @@ int main() {
   unsigned short int ballState[ballPool] = {
       0}; // 0: absent, 1: present, >1: amount of reflections from walls + 1
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
-      ballsVY[ballPool], ballsA[ballPool]; // want to creat an array list here
+      ballsVY[ballPool], ballsA[ballPool];
+  unsigned short int ballSource[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
-      _qBallVY[ballPool],
-      _qBallGreen[ballPool];  // use a queue of balls to insert. we make
+      _qBallVY[ballPool];
+  unsigned short int _qBallSource[ballPool]; // use a queue of balls to insert. we make
                               // arraylist operations after recieving all shot
                               // inputs
-  bool isBallGreen[ballPool]; // store whether the ball was shot by a red or
-                              // green tank
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
                      queueSize = 0,
                      upperBall = 0; // ball to which we gotta draw
@@ -64,8 +63,8 @@ int main() {
   float tankX[MAX_TANKS], tankY[MAX_TANKS],
       tankA[MAX_TANKS]; // array of all tank X & Y positions, and tank angles
                         // (always use RADIAN)
-  unsigned short int tankAmmo[MAX_TANKS],
-      tankHealth[MAX_TANKS]; // health and ammos
+  unsigned short int tankAmmo[MAX_TANKS], tankKills[MAX_TANKS],
+      tankDeaths[MAX_TANKS]; // health and ammos
   bool isTankGreen[MAX_TANKS] = {
       true}; // array storing the team or side of tanks
   unsigned short int lowerTank = 0, upperTank = 0, myTank = 0;
@@ -160,11 +159,6 @@ int main() {
         if (layer == 0) {
           // if ()
         } else if (layer == 1) {
-          _qBallX[queueSize] = mouseX;
-          _qBallY[queueSize] = mouseY;
-          _qBallVX[queueSize] = mouseX - static_cast<float>(width) / 2;
-          _qBallVY[queueSize] = mouseY - static_cast<float>(height) / 2;
-          queueSize++;
         } else if (layer == 2) {
         }
       } else if (const auto *evnt =
@@ -189,7 +183,7 @@ int main() {
             _qBallY[queueSize] = tankY[myTank];
             _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
             _qBallVY[queueSize] = -cos(tankA[myTank]) * BALL_SPEED;
-            _qBallGreen[queueSize] = isTankGreen[myTank];
+            _qBallSource[queueSize] = myTank;
             queueSize++;
           }
         } else { // hi, this is a comment
@@ -199,14 +193,14 @@ int main() {
             _qBallY[queueSize] = tankY[myTank];
             _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
             _qBallVY[queueSize] = -cos(tankA[myTank]) * BALL_SPEED;
-            _qBallGreen[queueSize] = isTankGreen[myTank];
+            _qBallSource[queueSize] = myTank;
             queueSize++;
           } else if (k == Keyboard::Key::Up) {
             _qBallX[queueSize] = tankX[1];
             _qBallY[queueSize] = tankY[1];
             _qBallVX[queueSize] = sin(tankA[1]) * BALL_SPEED;
             _qBallVY[queueSize] = -cos(tankA[1]) * BALL_SPEED;
-            _qBallGreen[queueSize] = false;
+            _qBallSource[queueSize] = 1;
             queueSize++;
           }
         }
@@ -228,7 +222,7 @@ int main() {
           ballsVX[nextBall] = _qBallVX[queueSize];
           ballsVY[nextBall] = _qBallVY[queueSize];
           ballsA[nextBall] = atan2(-ballsVY[queueSize], -ballsVX[queueSize]);
-          isBallGreen[nextBall] = _qBallGreen[queueSize];
+          ballSource[nextBall] = _qBallSource[queueSize];
           ballState[nextBall] = 1;
           nextBall++;
           upperBall++;
@@ -260,7 +254,7 @@ int main() {
               ballsVX[i] = ballsVX[upperBall];
               ballsVY[i] = ballsVY[upperBall];
               ballsA[i] = ballsA[upperBall];
-              isBallGreen[i] = isBallGreen[upperBall];
+              ballSource[i] = ballSource[upperBall];
               ballState[i] = 1;
               ballState[upperBall] = 0;
               upperBall--;
@@ -338,17 +332,14 @@ int main() {
         ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]); // calculate angle
         // collide with tanks
         for (int j = lowerTank; j <= upperTank; j++) {
-          if (isBallGreen[i] == isTankGreen[j])
+          if (isTankGreen[ballSource[i]] == isTankGreen[j])
             continue; // no friendly fire
           float dx = ballsX[i] - tankX[j];
           float dy = ballsY[i] - tankY[j];
           float distSquared = (dx * dx) + (dy * dy);
           float tRadius = TANK_HIT_RADIUS + ballRadius;
           if (distSquared <= (tRadius * tRadius)) {
-            if (tankHealth[j] > 0)
-              tankHealth[j]--; // damage the tank
-            else
-              tankA[j] = 0;
+            // TODO: DAMAGE AND SHI
             ballState[i] = BALL_REFLECTIONS + 1;
             break; // ball is dead, stop checking other tanks
           }
@@ -417,7 +408,7 @@ int main() {
             tankA[0] = tankA[1] = 0.f;
             isTankGreen[1] = false;            // the upper right tank is red
             tankAmmo[0] = tankAmmo[1] = 5;     // initial ammo and
-            tankHealth[0] = tankHealth[1] = 5; // health
+            tankDeaths[0] = tankDeaths[1] = tankKills[0] = tankKills[1] = 0; // health
             lowerTank = 0; // there are two tanks, starting from index 0,
             upperTank = 1; // going up to index 1
             tanks = 2;
