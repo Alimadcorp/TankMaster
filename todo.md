@@ -1,10 +1,12 @@
 Todo
 
-[ ] Add obstacles
+[x] Add obstacles
 [x] Add glares
 [x] Limit tank mvoement to bounds
 [x] Fix the ammo sprites, and implement ammo and cooldown
-[ ] Timer and win condition
+[x] Timer and win condition
+[ ] Move tanks to spawn on collision or death
+[ ] Leftover explosion tracks and tire tracks
 [ ] Create tank index to position algorithm
 [ ] Shield
 [ ] Speed boost
