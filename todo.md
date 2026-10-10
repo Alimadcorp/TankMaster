@@ -3,6 +3,7 @@ Todo
 [ ] Add obstacles
 [x] Add glares
 [x] Limit tank mvoement to bounds
+[ ] Fix the ammo sprites, and implement ammo and cooldown
 [ ] Create tank index to position algorithm
 [ ] Polish
     [ ] Add background
