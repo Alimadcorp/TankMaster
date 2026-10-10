@@ -5,6 +5,7 @@ Todo
 [x] Limit tank mvoement to bounds
 [x] Fix the ammo sprites, and implement ammo and cooldown
 [x] Timer and win condition
+[ ] Use acceleration to make tank movement smoother (new arrays)
 [ ] Move tanks to spawn on collision or death
 [ ] Leftover explosion tracks and tire tracks
 [ ] Create tank index to position algorithm
