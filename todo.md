@@ -5,6 +5,9 @@ Todo
 [x] Limit tank mvoement to bounds
 [x] Fix the ammo sprites, and implement ammo and cooldown
 [ ] Create tank index to position algorithm
+[ ] Shield
+[ ] Speed boost
+[ ] Two shot
 [ ] Polish
     [x] Add background
     [ ] Add intro

@@ -118,7 +118,8 @@ int main() {
   Font mojangles("mojangles.ttf");
   Text fpsText(mojangles);
   Text buttonText(mojangles);
-  Sprite cannonball(bulletTexture[0]);
+  // Sprite cannonball(bulletTexture[0]);
+  CircleShape cannonball(ballRadius, ballPts);
   Sprite ammoBar(ammoT[5]);
   Sprite greenTank(greenTankTexture);
   Sprite redTank(redTankTexture);
@@ -132,7 +133,8 @@ int main() {
   // --- SOUNDS ---
 
   // --- OBJECT PROPERTIES ---
-  cannonball.setOrigin({16.f, 16.f});
+  cannonball.setOrigin({2.f, 2.f});
+  cannonball.setFillColor(Color::Black);
   mojangles.setSmooth(false);
   sand.setSmooth(false);
   sand.setRepeated(true);
@@ -543,7 +545,7 @@ int main() {
       for (int i = lowerBall; i <= upperBall; i++) { // draw all cannon balls
         if (!ballState[i]) // if ballState is zero, skip
           continue;
-        cannonball.setTexture(bulletTexture[(t / 10 + i) % 4]);
+        // cannonball.setTexture(bulletTexture[(t / 10 + i) % 4]);
         cannonball.setPosition({ballsX[i], ballsY[i]});
         cannonball.setRotation(radians(ballsA[i]));
         window.draw(cannonball);
