@@ -4,6 +4,7 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <cmath>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
@@ -34,7 +35,7 @@ int main() {
                       State::Fullscreen, settings);
   width = window.getSize().x;
   height = window.getSize().y;
-  // window.setVerticalSyncEnabled(true);
+  window.setVerticalSyncEnabled(true);
   // // enabled in prod, but disabled beforehand to keep track of optimizations
   // window.setFramerateLimit(300);
   glEnable(GL_TEXTURE_2D); // open GL!
@@ -45,7 +46,7 @@ int main() {
   unsigned short int ballState[ballPool] = {
       0}; // 0: absent, 1: present, >1: amount of reflections from walls + 1
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
-      ballsVY[ballPool]; // want to creat an array list here
+      ballsVY[ballPool], ballsA[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
       _qBallVY[ballPool],
       _qBallGreen[ballPool];  // use a queue of balls to insert. we make
@@ -90,13 +91,22 @@ int main() {
   // --- TEXTURES ---
   Texture greenTankTexture("tank1.png");
   Texture redTankTexture("tank2.png");
+  Texture bulletTexture[4];
+  Texture hudTexture("hud.png");
+
+  for (int i = 0; i < 4; i++) {
+    if (bulletTexture[i].loadFromFile("bullet" + to_string(i) + ".png")) {
+      bulletTexture[i].setSmooth(false);
+    }
+  }
 
   // --- OBJECTS ---
-  CircleShape cannonball(ballRadius, ballPts);
   Font mojangles("mojangles.ttf");
   mojangles.setSmooth(false);
   Text fpsText(mojangles);
   Text buttonText(mojangles);
+  Sprite cannonball(bulletTexture[0]);
+  Sprite ammoBar(hudTexture);
   Sprite greenTank(greenTankTexture);
   Sprite redTank(redTankTexture);
   RectangleShape button({10, 10});
@@ -104,9 +114,8 @@ int main() {
   // --- SOUNDS ---
 
   // --- OBJECT PROPERTIES ---
-  cannonball.setFillColor(Color::White);
-  cannonball.setOrigin(
-      {ballRadius, ballRadius}); // set origin to draw circle around the center
+  hudTexture.setSmooth(false);
+  cannonball.setOrigin({16.f, 16.f});
   greenTankTexture.setSmooth(false);
   redTankTexture.setSmooth(false);
   greenTank.setScale({4.0f, 4.0f});
@@ -166,7 +175,7 @@ int main() {
             window.mapPixelToCoords(evnt->position); // mapped mouse coords
         mouseX = worldPos.x;
         mouseY = worldPos.y;
-      // keyboard events
+        // keyboard events
       } else if (const auto *evnt = event->getIf<Event::KeyPressed>()) {
         keysPressed++;
         keysJustPressed++;
@@ -218,6 +227,7 @@ int main() {
           ballsY[nextBall] = _qBallY[queueSize];
           ballsVX[nextBall] = _qBallVX[queueSize];
           ballsVY[nextBall] = _qBallVY[queueSize];
+          ballsA[nextBall] = atan2(-ballsVY[queueSize], -ballsVX[queueSize]);
           isBallGreen[nextBall] = _qBallGreen[queueSize];
           ballState[nextBall] = 1;
           nextBall++;
@@ -249,6 +259,7 @@ int main() {
               ballsY[i] = ballsY[upperBall];
               ballsVX[i] = ballsVX[upperBall];
               ballsVY[i] = ballsVY[upperBall];
+              ballsA[i] = ballsA[upperBall];
               isBallGreen[i] = isBallGreen[upperBall];
               ballState[i] = 1;
               ballState[upperBall] = 0;
@@ -324,6 +335,7 @@ int main() {
           ballsVY[i] *= -1.f;
           ballState[i]++;
         }
+        ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]); // calculate angle
         // collide with tanks
         for (int j = lowerTank; j <= upperTank; j++) {
           if (isBallGreen[i] == isTankGreen[j])
@@ -431,28 +443,40 @@ int main() {
       for (int i = lowerBall; i <= upperBall; i++) { // draw all cannon balls
         if (!ballState[i]) // if ballState is zero, skip
           continue;
+        cannonball.setTexture(bulletTexture[(t / 10 + i) % 4]);
         cannonball.setPosition({ballsX[i], ballsY[i]});
+        cannonball.setRotation(radians(ballsA[i]));
         window.draw(cannonball);
       }
       for (int i = lowerTank; i <= upperTank;
            i++) { // draw all green & red tanks
+        int maxAmmoWidth = 50;
+        int currentAmmoWidth = (tankAmmo[i] * maxAmmoWidth) / 5;
         if (isTankGreen[i]) {
           // assign position and rotation from stored array to the sprites
           greenTank.setPosition({tankX[i], tankY[i]});
           greenTank.setRotation(radians(tankA[i]));
+          ammoBar.setTextureRect(IntRect({15, 150}, {currentAmmoWidth, 10}));
           // CircleShape c(TANK_HIT_RADIUS);
           // c.setOutlineColor(Color::White);
           // c.setOutlineThickness(1);
           // c.setPosition({tankX[i], tankY[i]});
           // FloatRect cB = c.getLocalBounds();
           // c.setOrigin({cB.position.x + cB.size.x / 2.f,
-          //              cB.position.y + cB.size.y / 2.f}); // draw circle by CENTER
+          //              cB.position.y + cB.size.y / 2.f}); // draw circle by
+          //              CENTER
           // window.draw(c);
           window.draw(greenTank);
         } else {
           redTank.setPosition({tankX[i], tankY[i]});
           redTank.setRotation(radians(tankA[i]));
+          ammoBar.setTextureRect(IntRect({15, 110}, {currentAmmoWidth, 10}));
           window.draw(redTank);
+        }
+        if (tankAmmo[i] > 0) {
+          ammoBar.setOrigin({currentAmmoWidth / 2.f, 5.f});
+          ammoBar.setPosition({tankX[i], tankY[i] - 50.f});
+          window.draw(ammoBar);
         }
       }
     }
