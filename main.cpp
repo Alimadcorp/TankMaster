@@ -1,12 +1,15 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/System/Angle.hpp>
 #include <SFML/Window.hpp>
+#include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 
 #define BALL_REFLECTIONS 3 // this is max amt of ball reflections
 #define PI                                                                     \
@@ -56,14 +59,19 @@ int main() {
       tankA[2048]; // array of all tank X & Y positions, and tank angles (always
                    // use RADIAN)
   unsigned short int tankAmmo[2048], tankHealth[2048]; // health and ammos
-  bool isTankGreen[2048]; // array storing the team or side of tanks
+  bool isTankGreen[2048] = {true}; // array storing the team or side of tanks
   unsigned short int lowerTank = 0, upperTank = 0;
   unsigned short int tanks = 0; // amount of tanks currently playing
   unsigned short int layer = 0; // currently in game layer
   // 0: menu, 1: game, 2: local multiplayer menu, 3: multiplayer game
+  bool mousePressed = false;
+  unsigned short int keysPressed = 0;
+  Keyboard::Key key;
 
   short int buttonX[100], buttonY[100], buttonW[100], buttonH[100],
-      buttonLayer[100]; // button title and action is hardcoded to array indices
+      buttons = 1,
+      buttonLayer[100] = {
+          -1}; // button title and action is hardcoded to array indices
 
   // button declarations
   // play button
@@ -80,9 +88,12 @@ int main() {
   // all object declarations go here
   CircleShape cannonball(ballRadius, ballPts);
   Font mojangles("mojangles.ttf");
+  mojangles.setSmooth(false);
   Text fpsText(mojangles);
+  Text buttonText(mojangles);
   Sprite greenTank(greenTankTexture);
   Sprite redTank(redTankTexture);
+  RectangleShape button({10, 10});
 
   // sound imports
 
@@ -94,6 +105,7 @@ int main() {
   redTankTexture.setSmooth(false);
   greenTank.setScale({4.0f, 4.0f});
   redTank.setScale({4.0f, 4.0f});
+  button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
   fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
@@ -108,6 +120,8 @@ int main() {
 
   // main loop
   while (window.isOpen()) {
+    bool mouseJustPressed = false;
+    unsigned short int keysJustPressed = 0;
     // events
     while (const optional event = window.pollEvent()) {
       // manage close and resize
@@ -120,6 +134,7 @@ int main() {
         // view, the pixel position is no longer equivalent to world position
         mouseX = evnt->position.x;
         mouseY = evnt->position.y;
+        mousePressed = mouseJustPressed = true;
         if (layer == 0) {
           // if ()
         } else if (layer == 1) {
@@ -130,6 +145,17 @@ int main() {
           queueSize++;
         } else if (layer == 2) {
         }
+      } else if (const auto *evnt =
+                     event->getIf<Event::MouseButtonReleased>()) {
+        mousePressed = false;
+      } else if (const auto *evnt = event->getIf<Event::MouseMoved>()) {
+        mouseX = evnt-> position.x;
+        mouseY = evnt-> position.y;
+      } else if (const auto *evnt = event->getIf<Event::KeyPressed>()) {
+        keysPressed++; keysJustPressed++;
+        key = evnt->code;
+      } else if (const auto *evnt = event->getIf<Event::KeyReleased>()) {
+        keysPressed--;
       }
     }
     // deltaTime calc
@@ -246,6 +272,44 @@ int main() {
 
     // draw starts here
     window.clear();
+    for (int bi = 0; bi < buttons; bi++) {
+      if (buttonLayer[bi] == layer) {
+        button.setPosition(
+            {static_cast<float>(buttonX[bi]), static_cast<float>(buttonY[bi])});
+        button.setSize(
+            {static_cast<float>(buttonW[bi]), static_cast<float>(buttonH[bi])});
+        buttonText.setPosition(
+            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2),
+             static_cast<float>(buttonY[bi] + buttonH[bi] / 2)});
+        bool hovered = mouseX > buttonX[bi] && mouseY > buttonY[bi] &&
+                       mouseX < buttonX[bi] + buttonW[bi] &&
+                       mouseY < buttonY[bi] + buttonH[bi];
+        Color fillHovered = Color::White;
+        Color fillNormal = Color::Black;
+        Color textHovered = Color::Black;
+        Color textNormal = Color::White;
+        Color outlineHovered = Color::Black;
+        Color outlineNormal = Color::White;
+        switch (bi) {
+        case 0:
+          buttonText.setString("Play");
+          button.setFillColor(hovered ? fillHovered : fillNormal);
+          button.setOutlineColor(hovered ? outlineHovered : outlineNormal);
+          buttonText.setFillColor(hovered ? textHovered : textNormal);
+          if (mouseJustPressed) layer = 1;
+          break;
+        }
+        FloatRect bounds =
+            buttonText.getLocalBounds(); // get size of rendered text
+        buttonText.setOrigin({bounds.position.x + bounds.size.x / 2.f,
+                              bounds.position.y + bounds.size.y / 2.f});
+        buttonText.setPosition(
+            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2),
+             static_cast<float>(buttonY[bi] + buttonH[bi] / 2)});
+        window.draw(button);
+        window.draw(buttonText);
+      }
+    }
     if (layer == 1) {
       for (int i = lowerBall; i <= upperBall; i++) {
         if (!ballState[i])
