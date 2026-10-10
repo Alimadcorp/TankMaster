@@ -4,7 +4,6 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <cmath>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
