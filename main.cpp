@@ -13,8 +13,8 @@
 
 // DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
-#define BALL_SPEED 150.f         // pixels per second
-#define TANK_SPEED 100.f         // pixels per second
+#define BALL_SPEED 150.f        // pixels per second
+#define TANK_SPEED 100.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
 #define MAX_BALLS 2048
 #define MAX_TANKS 2048
@@ -52,8 +52,10 @@ int main() {
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
       ballsVY[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
-      _qBallVY[ballPool]; // use a queue of balls to insert. we make arraylist
-                          // operations after recieving all shot inputs
+      _qBallVY[ballPool],
+      _qBallGreen[ballPool]; // use a queue of balls to insert. we make
+                             // arraylist operations after recieving all shot
+                             // inputs
   bool isBallGreen[ballPool]; // store whether the ball was shot by a red or
                               // green tank
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
@@ -70,11 +72,11 @@ int main() {
       tankHealth[MAX_TANKS]; // health and ammos
   bool isTankGreen[MAX_TANKS] = {
       true}; // array storing the team or side of tanks
-  unsigned short int lowerTank = 0, upperTank = 0;
+  unsigned short int lowerTank = 0, upperTank = 0, myTank = 0;
   unsigned short int tanks = 0; // amount of tanks currently playing
   unsigned short int layer = 0; // currently in game layer
   // 0: menu, 1: game, 2: local multiplayer menu, 3: multiplayer game
-  bool mousePressed = false;
+  bool mousePressed = false, onlineMode = false;
   unsigned short int keysPressed = 0;
   Keyboard::Key key;
   short int buttonX[MAX_BUTTONS], buttonY[MAX_BUTTONS], buttonW[MAX_BUTTONS],
@@ -175,6 +177,33 @@ int main() {
         key = evnt->code;
       } else if (const auto *evnt = event->getIf<Event::KeyReleased>()) {
         keysPressed--;
+        Keyboard::Key k = evnt->code;
+        if (onlineMode) {
+          if (k == Keyboard::Key::W || k == Keyboard::Key::Up) {
+            _qBallX[queueSize] = tankX[myTank];
+            _qBallY[queueSize] = tankY[myTank];
+            _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
+            _qBallVY[queueSize] = -cos(tankA[myTank]) * BALL_SPEED;
+            _qBallGreen[queueSize] = isTankGreen[myTank];
+            queueSize++;
+          }
+        } else {
+          if (k == Keyboard::Key::W) {
+            _qBallX[queueSize] = tankX[myTank];
+            _qBallY[queueSize] = tankY[myTank];
+            _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
+            _qBallVY[queueSize] = -cos(tankA[myTank]) * BALL_SPEED;
+            _qBallGreen[queueSize] = isTankGreen[myTank];
+            queueSize++;
+          } else if (k == Keyboard::Key::Up) {
+            _qBallX[queueSize] = tankX[1];
+            _qBallY[queueSize] = tankY[1];
+            _qBallVX[queueSize] = sin(tankA[1]) * BALL_SPEED;
+            _qBallVY[queueSize] = -cos(tankA[1]) * BALL_SPEED;
+            _qBallGreen[queueSize] = false;
+            queueSize++;
+          }
+        }
       }
     }
     // deltaTime calc
@@ -184,7 +213,7 @@ int main() {
 
     // BALL STORAGE MANAGEMENT MWAHAHAHAHAH
     if (layer == 1) {
-      // move balls from queue to main array
+      // move balls from QUEUE to main array
       while (queueSize > 0) {
         if (!ballState[nextBall]) { // keep looping until an empty slot is found
           queueSize--;
@@ -192,6 +221,7 @@ int main() {
           ballsY[nextBall] = _qBallY[queueSize];
           ballsVX[nextBall] = _qBallVX[queueSize];
           ballsVY[nextBall] = _qBallVY[queueSize];
+          isBallGreen[nextBall] = _qBallGreen[queueSize];
           ballState[nextBall] = 1;
           nextBall++;
           upperBall++;
@@ -207,8 +237,8 @@ int main() {
       }
 
       // --- DATA STORAGE OPTIMIZATION ---
-      if (t % 600 == 0 &&
-          balls != nextBall && lowerBall != 0 && upperBall != balls - 1) { // every 600 ticks (usually 10 seconds)
+      if (t % 600 == 0 && balls != nextBall && lowerBall != 0 &&
+          upperBall != balls - 1) { // every 600 ticks (usually 10 seconds)
         // clear up the ball array to optimize
         for (int i = 0; i <= upperBall; i++) {
           if (!ballState[i]) { // if the current slot is empty
@@ -222,6 +252,7 @@ int main() {
               ballsY[i] = ballsY[upperBall];
               ballsVX[i] = ballsVX[upperBall];
               ballsVY[i] = ballsVY[upperBall];
+              isBallGreen[i] = isBallGreen[upperBall];
               ballState[i] = 1;
               ballState[upperBall] = 0;
               upperBall--;
@@ -256,13 +287,19 @@ int main() {
       if (Keyboard::isKeyPressed(Keyboard::Key::Right))
         velRed.x += 1.f;
 
-      tankA[0] += velGreen.x * deltaTime * TANK_ROTATION_SPEED;
-      tankX[0] += velGreen.y * sin(tankA[0]) * deltaTime * TANK_SPEED;
-      tankY[0] -= velGreen.y * cos(tankA[0]) * deltaTime * TANK_SPEED;
-      tankA[1] += velRed.x * deltaTime * TANK_ROTATION_SPEED;
-      tankX[1] += velRed.y * sin(tankA[1]) * deltaTime * TANK_SPEED;
-      tankY[1] -= velRed.y * cos(tankA[1]) * deltaTime * TANK_SPEED;
+      if (onlineMode)
+        velGreen += velRed;
 
+      tankA[0] += velGreen.x * deltaTime * TANK_ROTATION_SPEED;
+      tankX[myTank] += velGreen.y * sin(tankA[0]) * deltaTime * TANK_SPEED;
+      tankY[myTank] -= velGreen.y * cos(tankA[0]) * deltaTime * TANK_SPEED;
+      if (!onlineMode) {
+        tankA[1] += velRed.x * deltaTime * TANK_ROTATION_SPEED;
+        tankX[1] += velRed.y * sin(tankA[1]) * deltaTime * TANK_SPEED;
+        tankY[1] -= velRed.y * cos(tankA[1]) * deltaTime * TANK_SPEED;
+      }
+
+      // MOVEMENT AND COLLISION DETECTION
       for (int i = lowerBall; i <= upperBall; i++) {
         if (!ballState[i])
           continue; // skip processing if theres no ball
@@ -318,7 +355,6 @@ int main() {
 
     // --- DRAWING CALLS ---
     window.clear();
-
     // BUTTONS
     for (int bi = 0; bi < buttons; bi++) {
       if (buttonLayer[bi] == layer) {
@@ -346,6 +382,8 @@ int main() {
           buttonText.setFillColor(hovered ? textHovered : textNormal);
           if (mouseJustPressed && hovered) {
             layer = 1;
+            // this would be offline mode
+            onlineMode = false;
             tankX[0] = 100;
             tankY[0] = height - 100;
             tankX[1] = width - 100;
