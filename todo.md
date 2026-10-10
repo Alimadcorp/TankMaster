@@ -5,33 +5,33 @@ Todo
 [x] Limit tank mvoement to bounds
 [x] Fix the ammo sprites, and implement ammo and cooldown
 [x] Timer and win condition
-[ ] Use acceleration to make tank movement smoother (new arrays)
-[ ] Move tanks to spawn on collision or death
-[ ] Leftover explosion tracks and tire tracks
-[ ] Create tank index to position algorithm
-[ ] Shield
-[ ] Speed boost
-[ ] Two shots
-[ ] Three shots
-[ ] Polish
+[x] Use acceleration to make tank movement smoother (new arrays)
+[x] Move tanks to spawn on collision or death
+[x] Leftover explosion tracks and tire tracks
+[x] Create tank index to position algorithm
+[x] Shield
+[x] Speed boost
+[x] Two shots
+[x] Three shots
+[x] Polish
     [x] Add background
-    [ ] Add intro
-    [ ] Add main menu and settings, and credits
-    [ ] Add pause menu
-[ ] Add sounds!
-    [ ] Tank shoot
-    [ ] Music
-    [ ] Tank hit
-    [ ] Tank move
-[ ] Network
-    [ ] Identify devices by their ID, and with each broadcast message send the device ID. There can only be one tank per ID
-    [ ] Create broadcast server
-    [ ] Create listener
-    [ ] Create connection protocol (invite, accept)
-    [ ] Create lobby
-    [ ] Name devices by last number of local IP
+    [x] Add intro
+    [x] Add main menu and settings, and credits
+    [x] Add pause menu
+[x] Add sounds!
+    [x] Tank shoot
+    [x] Music
+    [x] Tank hit
+    [x] Tank move
+[x] Network
+    [x] Identify devices by their ID, and with each broadcast message send the device ID. There can only be one tank per ID
+    [x] Create broadcast server
+    [x] Create listener
+    [x] Create connection protocol (invite, accept)
+    [x] Create lobby
+    [x] Name devices by last number of local IP
 [ ] Build & Release
-    [ ] Build for Linux
+    [x] Build for Linux
     [ ] Build for Windows
     [ ] Publish on Itch.io
     [ ] Add android support

@@ -1,0 +1,55 @@
+name: Build and Export Windows App
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-sfml
+
+    - name: Compile C++ Application
+      shell: msys2 {0}
+      run: |
+        g++ -std=c++17 test.cpp \
+          -lopengl32 -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio \
+          -o app.exe
+
+    - name: Collect Dependencies
+      shell: msys2 {0}
+      run: |
+        mkdir -p build_export
+        mv app.exe build_export/
+        
+        # Copy required MinGW and SFML DLL system binaries automatically
+        cp /ucrt64/bin/libgcc_s_*.dll build_export/ 2>/dev/null || true
+        cp /ucrt64/bin/libstdc++-*.dll build_export/ 2>/dev/null || true
+        cp /ucrt64/bin/libwinpthread-*.dll build_export/ 2>/dev/null || true
+        cp /ucrt64/bin/sfml-*.dll build_export/ 2>/dev/null || true
+        cp /ucrt64/bin/libsndfile-*.dll build_export/ 2>/dev/null || true
+        cp /ucrt64/bin/libopenal-*.dll build_export/ 2>/dev/null || true
+
+        # Copy assets if you have them (uncomment if needed)
+        # cp -r assets build_export/
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-sfml-app
+        path: build_export/
