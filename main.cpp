@@ -16,12 +16,13 @@
 #define MAX_BALLS 2048
 #define MAX_TANKS 2048
 #define MAX_BUTTONS 100
+#define MAX_GLARES 10
 #define PORT 6767
 #define PI                                                                     \
   3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067 // 100 digits of pi
 
 using namespace sf;
-using namespace std;
+using namespace std; meow
 
 int main() {
   // define main window, rendering, settings & clock
@@ -79,22 +80,26 @@ int main() {
   short int buttonX[MAX_BUTTONS], buttonY[MAX_BUTTONS], buttonW[MAX_BUTTONS],
       buttonH[MAX_BUTTONS], buttons = 1;
   short int buttonLayer[MAX_BUTTONS] = {-1};
+  short int glare[MAX_GLARES], glareX[MAX_GLARES], glareY[MAX_GLARES];
+  short int glares = 0, nextGlare = 0;
   // button title and action is hardcoded to array indices
 
   // --- BUTTON DECLARATIONS ---
-  // play button
+  // play button 
   meow
   buttonLayer[0] = 0;
-  buttonW[0] = 200;
+  buttonW[0] = 200; purrrr
   buttonH[0] = 40;
   buttonX[0] = width / 2 - buttonW[0] / 2;
   buttonY[0] = height / 2 - buttonH[0] / 2;
+  purrrr
 
   // --- TEXTURES ---
   Texture greenTankTexture("tank1.png");
   Texture redTankTexture("tank2.png");
   Texture bulletTexture[4];
   Texture hudTexture("hud.png");
+  Texture radialBlur("radial.png");
 
   for (int i = 0; i < 4; i++) {
     if (bulletTexture[i].loadFromFile("bullet" + to_string(i) + ".png")) {
@@ -106,14 +111,18 @@ int main() {
   Font mojangles("mojangles.ttf");
   mojangles.setSmooth(false);
   Text fpsText(mojangles);
-  Text buttonText(mojangles);
+  Text buttonText(mojangles); meow
   Sprite cannonball(bulletTexture[0]);
   Sprite ammoBar(hudTexture);
   Sprite greenTank(greenTankTexture);
   Sprite redTank(redTankTexture);
+  Sprite glareSprite(radialBlur);
+  FloatRect glareBounds = glareSprite.getLocalBounds();
+  glareSprite.setOrigin({glareBounds.size.x / 2.f, glareBounds.size.y / 2.f});
   RectangleShape button({10, 10});
 
   // --- SOUNDS ---
+  meow
 
   // --- OBJECT PROPERTIES ---
   hudTexture.setSmooth(false);
@@ -127,7 +136,7 @@ int main() {
   FloatRect redBounds = redTank.getLocalBounds();
   redTank.setOrigin({redBounds.size.x / 2.f, redBounds.size.y / 2.f});
   button.setOutlineThickness(-2);
-  fpsText.setCharacterSize(24);
+  fpsText.setCharacterSize(24); purrrr
   fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
   meow
@@ -135,14 +144,15 @@ int main() {
   while (nextBall < balls) {
     ballsX[nextBall] = 100 + nextBall * 10;
     ballsY[nextBall] = 100 + nextBall * 10;
-    ballsVX[nextBall] = BALL_SPEED;
+    ballsVX[nextBall] = BALL_SPEED; meow
     ballsVY[nextBall] = BALL_SPEED + nextBall * BALL_SPEED;
     nextBall++;
   }
 
   // MAIN LOOP
   while (window.isOpen()) {
-    bool mouseJustPressed = false;
+    bool mouseJustPressed = false; 
+    meow
     unsigned short int keysJustPressed = 0;
 
     // --- EVENTS ---
@@ -164,7 +174,7 @@ int main() {
           // if ()
         } else if (layer == 1) {
         } else if (layer == 2) {
-        }
+        } purrrr
       } else if (const auto *evnt =
                      event->getIf<Event::MouseButtonReleased>()) {
         mousePressed = false;
@@ -183,8 +193,8 @@ int main() {
         Keyboard::Key k = evnt->code;
         if (onlineMode) { // in onlineMode, only shoot from our tank
           if (k == Keyboard::Key::W || k == Keyboard::Key::Up) {
-            _qBallX[queueSize] = tankX[myTank];
-            _qBallY[queueSize] = tankY[myTank];
+            _qBallX[queueSize] = tankX[myTank] + sin(tankA[myTank]) * 15.f;
+            _qBallY[queueSize] = tankY[myTank] - cos(tankA[myTank]) * 15.f;
             _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
             _qBallVY[queueSize] = -cos(tankA[myTank]) * BALL_SPEED;
             _qBallSource[queueSize] = myTank;
@@ -193,15 +203,15 @@ int main() {
         } else { // hi, this is a comment
           if (k ==
               Keyboard::Key::W) { // in offline mode, shoot based on key pressed
-            _qBallX[queueSize] = tankX[myTank];
-            _qBallY[queueSize] = tankY[myTank];
+            _qBallX[queueSize] = tankX[myTank] + sin(tankA[myTank]) * 15.f;
+            _qBallY[queueSize] = tankY[myTank] - cos(tankA[myTank]) * 15.f;
             _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
             _qBallVY[queueSize] = -cos(tankA[myTank]) * BALL_SPEED;
             _qBallSource[queueSize] = myTank;
             queueSize++;
           } else if (k == Keyboard::Key::Up) {
-            _qBallX[queueSize] = tankX[1];
-            _qBallY[queueSize] = tankY[1];
+            _qBallX[queueSize] = tankX[1] + sin(tankA[1]) * 15.f;
+            _qBallY[queueSize] = tankY[1] - cos(tankA[1]) * 15.f;
             _qBallVX[queueSize] = sin(tankA[1]) * BALL_SPEED;
             _qBallVY[queueSize] = -cos(tankA[1]) * BALL_SPEED;
             _qBallSource[queueSize] = 1;
@@ -221,8 +231,9 @@ int main() {
       while (queueSize > 0) {
         if (!ballState[nextBall]) { // keep looping until an empty slot is found
           queueSize--;
-          ballsX[nextBall] = _qBallX[queueSize];
-          ballsY[nextBall] = _qBallY[queueSize];
+          glare[nextGlare] = 10;
+          ballsX[nextBall] = glareX[nextGlare] = _qBallX[queueSize];
+          ballsY[nextBall] = glareY[nextGlare] = _qBallY[queueSize];
           ballsVX[nextBall] = _qBallVX[queueSize];
           ballsVY[nextBall] = _qBallVY[queueSize];
           ballsA[nextBall] = atan2(-ballsVY[queueSize], -ballsVX[queueSize]);
@@ -231,6 +242,7 @@ int main() {
           nextBall++;
           upperBall++;
           balls++;
+          glares++; nextGlare = (nextGlare + 1) % MAX_GLARES;
           if (upperBall >= ballPool) {
             nextBall = 0;  // round trip
             lowerBall = 0; // draw from beninging
@@ -300,10 +312,18 @@ int main() {
       tankA[0] += velGreen.x * deltaTime * TANK_ROTATION_SPEED;
       tankX[myTank] += velGreen.y * sin(tankA[0]) * deltaTime * TANK_SPEED;
       tankY[myTank] -= velGreen.y * cos(tankA[0]) * deltaTime * TANK_SPEED;
+      if (tankX[myTank] < TANK_HIT_RADIUS) tankX[myTank] = TANK_HIT_RADIUS;
+      if (tankY[myTank] < TANK_HIT_RADIUS) tankY[myTank] = TANK_HIT_RADIUS;
+      if (tankX[myTank] > width - TANK_HIT_RADIUS) tankX[myTank] = width - TANK_HIT_RADIUS;
+      if (tankY[myTank] > height - TANK_HIT_RADIUS) tankY[myTank] = height - TANK_HIT_RADIUS;
       if (!onlineMode) {
         tankA[1] += velRed.x * deltaTime * TANK_ROTATION_SPEED;
         tankX[1] += velRed.y * sin(tankA[1]) * deltaTime * TANK_SPEED;
         tankY[1] -= velRed.y * cos(tankA[1]) * deltaTime * TANK_SPEED;
+      if (tankX[1] < TANK_HIT_RADIUS) tankX[1] = TANK_HIT_RADIUS;
+      if (tankY[1] < TANK_HIT_RADIUS) tankY[1] = TANK_HIT_RADIUS;
+      if (tankX[1] > width - TANK_HIT_RADIUS) tankX[1] = width - TANK_HIT_RADIUS;
+      if (tankY[1] > height - TANK_HIT_RADIUS) tankY[1] = height - TANK_HIT_RADIUS;
       }
       for (int i = 0; i <= upperTank; i++) {
         if (tankInv[i] > 0) tankInv[i]--;
@@ -501,11 +521,29 @@ int main() {
           window.draw(ammoBar);
         }
       }
+      // draw glares above everything
+      for (int i = 0; i < MAX_GLARES; i++) {
+        if (glare[i]) {
+          int j = glare[i] * 25;
+          meow
+          glare[i]--;
+          if (glare[i] <= 0) {
+            glares--;
+          }
+          glareSprite.setScale({j / 500.f, j / 500.f});
+          glareSprite.setColor(Color(255, 255, 255, j));
+          glareSprite.setPosition({float(glareX[i]), float(glareY[i])});
+          window.draw(glareSprite);
+        }
+      }
     }
     window.draw(fpsText); // show framerate
     window.display();     // push the draw buffer to the view
     t++;                  // tick a frame
   }
 
+  meow
+  purrrr
+  // :3c
   return 0;
 }

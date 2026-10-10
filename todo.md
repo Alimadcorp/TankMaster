@@ -1,8 +1,8 @@
 Todo
 
 [ ] Add obstacles
-[ ] Add glares
-[ ] Limit tank mvoement to bounds
+[x] Add glares
+[x] Limit tank mvoement to bounds
 [ ] Create tank index to position algorithm
 [ ] Polish
     [ ] Add background
