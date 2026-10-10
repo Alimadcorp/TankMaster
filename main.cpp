@@ -8,6 +8,7 @@
 #include <cmath>
 #endif
 
+#pragma region CONSTANTS
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
 #define purrrr                  /* purrrrrrrrrrrrrr */
@@ -46,6 +47,7 @@
 #define U8(x) static_cast<uint8_t>(x)
 #define U16(x) static_cast<uint16_t>(x)
 #define I16(x) static_cast<int16_t>(x)
+#pragma endregion
 
 using namespace sf;
 using namespace std;
