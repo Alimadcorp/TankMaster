@@ -279,8 +279,8 @@ int main() {
         button.setSize(
             {static_cast<float>(buttonW[bi]), static_cast<float>(buttonH[bi])});
         buttonText.setPosition(
-            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2),
-             static_cast<float>(buttonY[bi] + buttonH[bi] / 2)});
+            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2.f),
+             static_cast<float>(buttonY[bi] + buttonH[bi] / 2.f)});
         bool hovered = mouseX > buttonX[bi] && mouseY > buttonY[bi] &&
                        mouseX < buttonX[bi] + buttonW[bi] &&
                        mouseY < buttonY[bi] + buttonH[bi];
@@ -304,8 +304,8 @@ int main() {
         buttonText.setOrigin({bounds.position.x + bounds.size.x / 2.f,
                               bounds.position.y + bounds.size.y / 2.f});
         buttonText.setPosition(
-            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2),
-             static_cast<float>(buttonY[bi] + buttonH[bi] / 2)});
+            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2.f),
+             static_cast<float>(buttonY[bi] + buttonH[bi] / 2.f)});
         window.draw(button);
         window.draw(buttonText);
       }
