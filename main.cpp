@@ -13,6 +13,7 @@
 #define TANK_SPEED 200.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
 #define TANK_HIT_RADIUS 20.f
+#define ROCK_HIT_RADIUS 16.f
 #define MAX_BALLS 2048
 #define MAX_TANKS 2048
 #define TANK_COOLDOWN 1.f
@@ -383,6 +384,24 @@ int main() {
         if (tankY[1] > height - TANK_HIT_RADIUS)
           tankY[1] = height - TANK_HIT_RADIUS;
       }
+
+      // tank-rock collision
+      for (int i = 0; i <= upperTank; i++) {
+        for (int r = 0; r < 10; r++) {
+          float dx = tankX[i] - rocks[r].x;
+          float dy = tankY[i] - rocks[r].y;
+          float d = dx * dx + dy * dy; // square distance
+          float minD = TANK_HIT_RADIUS + ROCK_HIT_RADIUS;
+          if (d < minD * minD && d > 0.0001f) {
+            float dist = sqrt(d);
+            float overlap = minD - dist;
+            tankX[i] += (dx / dist) * overlap;
+            tankY[i] += (dy / dist) * overlap;
+          }
+        }
+      }
+
+      // tank ammo and cooldowns
       for (int i = 0; i <= upperTank; i++) {
         if (tankInv[i] > 0)
           tankInv[i]--;
@@ -565,9 +584,9 @@ int main() {
           if (tankInv[i] > 0)
             greenTank.setColor(
                 Color(255, 255, 255, (tankInv[i] / 10) % 2 ? 255 : 130));
-          else 
+          else
             greenTank.setColor(Color::White);
-          // CircleShape c(TANK_HIT_RADIUS); 
+          // CircleShape c(TANK_HIT_RADIUS);
           // c.setOutlineColor(Color::White);
           // c.setOutlineThickness(1);
           // c.setPosition({tankX[i], tankY[i]});
