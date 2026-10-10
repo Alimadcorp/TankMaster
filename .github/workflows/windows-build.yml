@@ -27,7 +27,7 @@ jobs:
     - name: Compile C++ Application
       shell: msys2 {0}
       run: |
-        g++ -std=c++17 test.cpp \
+        g++ -std=c++17 main.cpp \
           -lopengl32 -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio \
           -o app.exe
 
