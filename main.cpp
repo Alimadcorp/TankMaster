@@ -50,9 +50,9 @@ int main() {
   unsigned short int ballSource[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
       _qBallVY[ballPool];
-  unsigned short int _qBallSource[ballPool]; // use a queue of balls to insert. we make
-                              // arraylist operations after recieving all shot
-                              // inputs
+  unsigned short int _qBallSource[ballPool]; // use a queue of balls to insert.
+                                             // we make arraylist operations
+                                             // after recieving all shot inputs
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
                      queueSize = 0,
                      upperBall = 0; // ball to which we gotta draw
@@ -64,7 +64,8 @@ int main() {
       tankA[MAX_TANKS]; // array of all tank X & Y positions, and tank angles
                         // (always use RADIAN)
   unsigned short int tankAmmo[MAX_TANKS], tankKills[MAX_TANKS],
-      tankDeaths[MAX_TANKS]; // health and ammos
+      tankDeaths[MAX_TANKS], tankCooldown[MAX_TANKS],
+      tankInv[MAX_TANKS]; // health and ammos
   bool isTankGreen[MAX_TANKS] = {
       true}; // array storing the team or side of tanks
   unsigned short int lowerTank = 0, upperTank = 0, myTank = 0;
@@ -339,9 +340,22 @@ int main() {
           float distSquared = (dx * dx) + (dy * dy);
           float tRadius = TANK_HIT_RADIUS + ballRadius;
           if (distSquared <= (tRadius * tRadius)) {
-            // TODO: DAMAGE AND SHI
-            ballState[i] = BALL_REFLECTIONS + 1;
-            break; // ball is dead, stop checking other tanks
+            if (tankInv[j] > 0) {
+              float dx = ballsX[i] - tankX[j];
+              float dy = ballsY[i] - tankY[j];
+              float spd = sqrt((dx * dx) + (dy * dy));
+              if (spd != 0.f) {
+                ballsVX[i] = (dx / spd) * BALL_SPEED;
+                ballsVY[i] = (dy / spd) * BALL_SPEED;
+              }
+              ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]); // calculate angle
+            } else {
+              tankKills[ballSource[i]]++;
+              tankDeaths[j]++;
+              tankInv[j] = 120;
+              ballState[i] = BALL_REFLECTIONS + 1;
+              break; // ball is dead, stop checking other tanks
+            }
           }
         }
         if (ballState[i] > BALL_REFLECTIONS) {
@@ -406,9 +420,11 @@ int main() {
             tankX[1] = width - 100; // upper right of screen
             tankY[1] = 100;
             tankA[0] = tankA[1] = 0.f;
-            isTankGreen[1] = false;            // the upper right tank is red
-            tankAmmo[0] = tankAmmo[1] = 5;     // initial ammo and
-            tankDeaths[0] = tankDeaths[1] = tankKills[0] = tankKills[1] = 0; // health
+            isTankGreen[1] = false;        // the upper right tank is red
+            tankAmmo[0] = tankAmmo[1] = 5; // initial ammo and
+            tankDeaths[0] = tankDeaths[1] = tankKills[0] = tankKills[1] =
+                0;                         // health
+            tankInv[0] = tankInv[1] = 120; // initial invincibility
             lowerTank = 0; // there are two tanks, starting from index 0,
             upperTank = 1; // going up to index 1
             tanks = 2;
