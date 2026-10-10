@@ -4,6 +4,7 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <cmath>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
@@ -2089,12 +2090,12 @@ int main() {
     }
     if (layer == 5) { // credits
       string credits[9] = {"TankMaster",
-                           "a tank shooter game",
-                           "made with C++ and SFML",
+                           "a 2d tank shooter game",
+                           "made with C++ and SFML, by",
                            "",
-                           "0732 - Muhammad Ali",
-                           "0729 - Muhammad Hamza",
-                           "0725 - Amaz al Muqtadir",
+                           "Muhammad Ali",
+                           "Muhammad Hamza",
+                           "Amaz al Muqtadir",
                            "",
                            "Thanks for playing :3c"};
       for (int i = 0; i < 9; i++) {

@@ -58,7 +58,7 @@ A tank can shoot a cannonball from it's ammo, which has a size of 5, and refills
 - Use of arrays greater than 1D is not allowed
 - Use of more than one source file is impossible as functions are not allowed
 - Use of custom classes or data structures is not allowed
-- Use of any library except SFML/*.hpp is not allowed
+- Use of any library except SFML/*.hpp and cmath is not allowed
 
 **Use of AI**:
 
