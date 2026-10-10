@@ -1,11 +1,9 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <string>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
@@ -671,12 +669,13 @@ int main() {
     // show time
     int sec = static_cast<int>(timeLeft) % 60;
     int min = int(timeLeft / 60);
-    timeText.setString((min < 10 ? "0" : "") + to_string(min) + ":" + (sec < 10 ? "0" : "") + to_string(sec));
+    timeText.setString((min < 10 ? "0" : "") + to_string(min) + ":" +
+                       (sec < 10 ? "0" : "") + to_string(sec));
     FloatRect timeBounds = timeText.getLocalBounds();
     timeText.setOrigin({timeBounds.size.x / 2.f, timeBounds.size.y / 2.f});
     window.draw(timeText);
-    window.display();     // push the draw buffer to the view
-    t++;                  // tick a frame
+    window.display(); // push the draw buffer to the view
+    t++;              // tick a frame
   }
 
   meow purrrr
