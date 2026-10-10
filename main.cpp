@@ -8,6 +8,7 @@
 #include <SFML/Window.hpp>
 
 #define BALL_REFLECTIONS 3 // this is max amt of ball reflections
+#define PI 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067 // 100 digits of pi
 
 using namespace sf;
 using namespace std;
@@ -22,7 +23,9 @@ int main() {
   settings.majorVersion = 3;
   settings.minorVersion = 0;
   RenderWindow window(VideoMode({width, height}), "TankMaster", Style::Default,
-                      State::Windowed, settings);
+                      State::Fullscreen, settings);
+  width = window.getSize().x;
+  height = window.getSize().y;
   // window.setVerticalSyncEnabled(true);
   // // enabled in prod, but disabled beforehand to keep track of optimizations
   // window.setFramerateLimit(300);
@@ -38,6 +41,7 @@ int main() {
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
       _qBallVY[ballPool]; // use a queue of balls to insert. we make arraylist
                           // operations after recieving all shot inputs
+  bool isBallGreen[2048]; // store whether the ball was shot by a red or green tank
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
                      queueSize = 0,
                      upperBall = 0; // ball to which we gotta draw
@@ -45,6 +49,12 @@ int main() {
   float mouseX = 0.f, mouseY = 0.f; // will be used a lot so declared here
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
+  float tankX[2048], tankY[2048], tankA[2048]; // array of all tank X & Y positions, and tank angles (always use RADIAN)
+  unsigned short int tankAmmo[2048], tankHealth[2048]; // health and ammos
+  bool isTankGreen[2048]; // array storing the team or side of tanks
+  unsigned short int tanks = 0; // amount of tanks currently playing
+  unsigned short int layer = 0; // currently in game layer
+  // 0: menu, 1: game, 2: local multiplayer menu, 3: multiplayer game
 
   // texture imports
   Texture greenTankTexture("tank1.png");
@@ -90,8 +100,10 @@ int main() {
         // this is initially effect less, but as soon as we scale or resize the
         // view, the pixel position is no longer equivalent to world position
         Vector2f worldPos = window.mapPixelToCoords(evnt->position);
-        mouseX = worldPos.x;
-        mouseY = worldPos.y;
+        mouseX = evnt->position.x;
+        mouseY = evnt->position.y;
+        // mouseX = worldPos.x;
+        // mouseY = worldPos.y;
         _qBallX[queueSize] = mouseX;
         _qBallY[queueSize] = mouseY;
         _qBallVX[queueSize] = mouseX - static_cast<float>(width) / 2;
@@ -163,13 +175,13 @@ int main() {
       ballsX[i] += ballsVX[i] * deltaTime;
       ballsY[i] += ballsVY[i] * deltaTime;
       // reflect from walls
-      if (ballsX[i] + ballRadius > 500.f) {
-        ballsX[i] = 500.f - ballRadius;
+      if (ballsX[i] + ballRadius > width) {
+        ballsX[i] = width - ballRadius;
         ballsVX[i] *= -1.f;
         ballState[i]++; // increment reflections
       }
-      if (ballsY[i] + ballRadius > 500.f) {
-        ballsY[i] = 500.f - ballRadius;
+      if (ballsY[i] + ballRadius > height) {
+        ballsY[i] = height - ballRadius;
         ballsVY[i] *= -1.f;
         ballState[i]++;
       }
