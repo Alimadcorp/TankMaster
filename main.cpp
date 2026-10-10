@@ -77,7 +77,7 @@ int main() {
   unsigned short int lowerTank = 0, upperTank = 0, myTank = 0;
   unsigned short int tanks = 0; // amount of tanks currently playing
   unsigned short int layer = 0; // currently in game layer
-  // 0: menu, 1: game, 2: local multiplayer menu, 3: multiplayer game
+  // 0: menu, 1: game, 2: win screen, 3: multiplayer menu
   bool mousePressed = false, onlineMode = false;
   unsigned short int keysPressed = 0;
   Keyboard::Key key;
@@ -86,6 +86,7 @@ int main() {
   short int buttonLayer[MAX_BUTTONS] = {-1};
   short int glare[MAX_GLARES], glareX[MAX_GLARES], glareY[MAX_GLARES];
   short int glares = 0, nextGlare = 0;
+  unsigned int greenKills = 0, redKills = 0;
   float timeLeft = CLOCK_TIME;
 
   // button title and action is hardcoded to array 1
@@ -132,6 +133,8 @@ int main() {
   Text fpsText(mojangles);
   Text timeText(mojangles);
   Text buttonText(mojangles);
+  Text greenText(mojangles);
+  Text redText(mojangles);
   // Sprite cannonball(bulletTexture[0]);
   CircleShape cannonball(ballRadius, ballPts);
   Sprite ammoBar(ammoT[5]);
@@ -163,12 +166,22 @@ int main() {
   ammoBar.setScale({1.3f, 1.3f});
   button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
+  redText.setCharacterSize(24);
+  greenText.setCharacterSize(24);
   timeText.setCharacterSize(36);
   rock1.setTextureRect(IntRect({0, 0}, {11, 9}));
   rock2.setTextureRect(IntRect({1, 11}, {11, 10}));
   rock3.setTextureRect(IntRect({0, 22}, {12, 10}));
-  purrrr fpsText.setFillColor(sf::Color::Green);
+  fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
+  redText.setFillColor(sf::Color::Red);
+  redText.setOutlineColor(Color::Black);
+  redText.setOutlineThickness(1);
+  redText.setPosition({width - 10.f, height - 10.f});
+  greenText.setFillColor(sf::Color::Green);
+  greenText.setPosition({10.f, height - 10.f});
+  greenText.setOutlineColor(Color::Black);
+  greenText.setOutlineThickness(1);
   purrrr timeText.setFillColor(sf::Color::Black);
   timeText.setPosition({float(width) / 2.f, 20.f});
   rock1.setScale({3.f, 3.f});
@@ -423,6 +436,10 @@ int main() {
         }
       }
       timeLeft -= deltaTime;
+      if (timeLeft <= 0.f) {
+        timeLeft = 0.f;
+        layer = 2;
+      }
 
       // MOVEMENT AND COLLISION DETECTION
       for (int i = lowerBall; i <= upperBall; i++) {
@@ -500,6 +517,10 @@ int main() {
                                  // becomes the source
             } else {
               tankKills[ballSource[i]]++;
+              if (isTankGreen[ballSource[i]])
+                greenKills++;
+              else
+                redKills++;
               tankDeaths[j]++;
               tankInv[j] = 149;
               ballState[i] = BALL_REFLECTIONS + 1;
@@ -576,7 +597,8 @@ int main() {
             tankCooldown[0] = tankCooldown[1] = 0.1f;
             tankAmmoCooldown[0] = tankAmmoCooldown[1] = 5.f;
             tankDeaths[0] = tankDeaths[1] = tankKills[0] = tankKills[1] =
-                0;                         // health
+                0; // health
+            redKills = greenKills = 0;
             tankInv[0] = tankInv[1] = 120; // initial invincibility
             lowerTank = 0; // there are two tanks, starting from index 0,
             upperTank = 1; // going up to index 1
@@ -664,16 +686,22 @@ int main() {
           window.draw(glareSprite);
         }
       }
+      window.draw(fpsText); // show framerate
+      // show time
+      int sec = static_cast<int>(timeLeft) % 60;
+      int min = int(timeLeft / 60);
+      timeText.setString((min < 10 ? "0" : "") + to_string(min) + ":" +
+                         (sec < 10 ? "0" : "") + to_string(sec));
+      FloatRect timeBounds = timeText.getLocalBounds();
+      timeText.setOrigin({timeBounds.size.x / 2.f, timeBounds.size.y / 2.f});
+      window.draw(timeText);
+      // show wins
+      greenText.setString(to_string(greenKills));
+      redText.setString(to_string(redKills));
+      redText.setOrigin({redText.getLocalBounds().size.x, 0.f}); // right align
+      window.draw(greenText);
+      window.draw(redText);
     }
-    window.draw(fpsText); // show framerate
-    // show time
-    int sec = static_cast<int>(timeLeft) % 60;
-    int min = int(timeLeft / 60);
-    timeText.setString((min < 10 ? "0" : "") + to_string(min) + ":" +
-                       (sec < 10 ? "0" : "") + to_string(sec));
-    FloatRect timeBounds = timeText.getLocalBounds();
-    timeText.setOrigin({timeBounds.size.x / 2.f, timeBounds.size.y / 2.f});
-    window.draw(timeText);
     window.display(); // push the draw buffer to the view
     t++;              // tick a frame
   }
