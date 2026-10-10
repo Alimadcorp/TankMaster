@@ -4,7 +4,6 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <string>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
@@ -93,22 +92,20 @@ int main() {
   purrrr buttonH[0] = 40;
   buttonX[0] = width / 2 - buttonW[0] / 2;
   buttonY[0] = height / 2 - buttonH[0] / 2;
+  Vector2f rocks[3] = {{width / 2.f, height * 2.f / 3.f}, {width * 1.f / 4.f, height * 2.f / 5.f}, {width * 2.f / 3.f, height * 4.f / 7.f}};
 
   // --- TEXTURES ---
   Texture greenTankTexture("tank1.png");
   Texture redTankTexture("tank2.png");
   Texture bulletTexture[4];
   Texture ammoT[6];
-  Texture rockT[5];
+  Texture rockT("rocks.png");
   Texture radialBlur("radial.png");
   Texture sand("sand.png");
 
   for (int i = 0; i < 4; i++) {
     if (bulletTexture[i].loadFromFile("bullet" + to_string(i) + ".png")) {
       bulletTexture[i].setSmooth(false);
-    }
-    if (rockT[i].loadFromFile("rock" + to_string(i) + ".png")) {
-      rockT[i].setSmooth(false);
     }
   }
   for (int i = 5; i >= 0; i--) {
@@ -127,7 +124,9 @@ int main() {
   Sprite redTank(redTankTexture);
   Sprite glareSprite(radialBlur);
   Sprite bg(sand);
-  Sprite rock(rockT[0]);
+  Sprite rock1(rockT);
+  Sprite rock2(rockT);
+  Sprite rock3(rockT);
   RectangleShape button({10, 10});
 
   // --- SOUNDS ---
@@ -137,6 +136,7 @@ int main() {
   mojangles.setSmooth(false);
   sand.setSmooth(false);
   sand.setRepeated(true);
+  rockT.setSmooth(false);
   bg.setPosition({0.f, 0.f});
   bg.setScale({3.f, 3.f});
   bg.setTextureRect(IntRect({0, 0}, {int(width), int(height)}));
@@ -147,15 +147,28 @@ int main() {
   ammoBar.setScale({1.3f, 1.3f});
   button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
+  rock1.setTextureRect(IntRect({0, 0}, {11, 9}));
+  rock2.setTextureRect(IntRect({1, 11}, {11, 10}));
+  rock3.setTextureRect(IntRect({0, 22}, {12, 10}));
   purrrr fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
+  rock1.setPosition(rocks[0]);
+  rock2.setPosition(rocks[1]);
+  rock3.setPosition(rocks[2]);
+  rock1.setScale({3.f, 3.f});
+  rock2.setScale({3.f, 3.f});
+  rock3.setScale({3.f, 3.f});
   FloatRect glareBounds = glareSprite.getLocalBounds();
-  FloatRect rockBounds = rock.getLocalBounds();
+  FloatRect rock1Bounds = rock1.getLocalBounds();
+  FloatRect rock2Bounds = rock2.getLocalBounds();
+  FloatRect rock3Bounds = rock3.getLocalBounds();
   FloatRect ammoBounds = ammoBar.getLocalBounds();
   FloatRect greenBounds = greenTank.getLocalBounds();
   FloatRect redBounds = redTank.getLocalBounds();
   glareSprite.setOrigin({glareBounds.size.x / 2.f, glareBounds.size.y / 2.f});
-  rock.setOrigin({rockBounds.size.x / 2.f, rockBounds.size.y / 2.f});
+  rock1.setOrigin({rock1Bounds.size.x / 2.f, rock1Bounds.size.y / 2.f});
+  rock2.setOrigin({rock2Bounds.size.x / 2.f, rock2Bounds.size.y / 2.f});
+  rock3.setOrigin({rock3Bounds.size.x / 2.f, rock3Bounds.size.y / 2.f});
   ammoBar.setOrigin({ammoBounds.size.x / 2.f, ammoBounds.size.y / 2.f});
   greenTank.setOrigin({greenBounds.size.x / 2.f, greenBounds.size.y / 2.f});
   redTank.setOrigin({redBounds.size.x / 2.f, redBounds.size.y / 2.f});
@@ -568,9 +581,13 @@ int main() {
         }
         // draw the ammobars
         ammoBar.setTexture(ammoT[tankAmmo[i]]);
-        ammoBar.setPosition({tankX[i], tankY[i] - 30.f});
+        ammoBar.setPosition({tankX[i], tankY[i] + 40.f});
+        ammoBar.setColor(Color(255, 255, 255, tankCooldown[i] > 0 ? 123 : 255));
         window.draw(ammoBar);
       }
+      window.draw(rock1);
+      window.draw(rock2);
+      window.draw(rock3);
       // draw glares above everything
       for (int i = 0; i < MAX_GLARES; i++) {
         if (glare[i]) {
