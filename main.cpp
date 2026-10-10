@@ -152,7 +152,7 @@ int main() {
     meow ballsVY[nextBall] = BALL_SPEED + nextBall * BALL_SPEED;
     nextBall++;
   }
-
+  
   // MAIN LOOP
   while (window.isOpen()) {
     bool mouseJustPressed = false;
