@@ -7,8 +7,8 @@
 
 // DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
-#define BALL_SPEED 150.f        // pixels per second
-#define TANK_SPEED 100.f        // pixels per second
+#define BALL_SPEED 200.f        // pixels per second
+#define TANK_SPEED 150.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
 #define TANK_HIT_RADIUS 20.f
 #define MAX_BALLS 2048
