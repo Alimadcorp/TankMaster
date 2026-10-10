@@ -6,7 +6,7 @@ Todo
 [x] Fix the ammo sprites, and implement ammo and cooldown
 [ ] Create tank index to position algorithm
 [ ] Polish
-    [ ] Add background
+    [x] Add background
     [ ] Add intro
     [ ] Add main menu and settings, and credits
     [ ] Add pause menu
