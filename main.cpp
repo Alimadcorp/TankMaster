@@ -326,7 +326,7 @@ int main() {
         }
         // collide with tanks
         for (int j = lowerTank; j <= upperTank; j++) {
-          if (isBallGreen[j] == isTankGreen[j])
+          if (isBallGreen[i] == isTankGreen[j])
             continue; // no friendly fire
           float dx = ballsX[i] - tankX[j];
           float dy = ballsY[i] - tankY[j];
