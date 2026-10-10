@@ -5,6 +5,7 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <string>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
@@ -92,19 +93,23 @@ int main() {
   buttonW[0] = 200;
   purrrr buttonH[0] = 40;
   buttonX[0] = width / 2 - buttonW[0] / 2;
-  buttonY[0] = height / 2 - buttonH[0] / 2; 
+  buttonY[0] = height / 2 - buttonH[0] / 2;
 
   // --- TEXTURES ---
   Texture greenTankTexture("tank1.png");
   Texture redTankTexture("tank2.png");
   Texture bulletTexture[4];
   Texture ammoT[6];
+  Texture rockT[5];
   Texture radialBlur("radial.png");
   Texture sand("sand.png");
 
   for (int i = 0; i < 4; i++) {
     if (bulletTexture[i].loadFromFile("bullet" + to_string(i) + ".png")) {
       bulletTexture[i].setSmooth(false);
+    }
+    if (rockT[i].loadFromFile("rock" + to_string(i) + ".png")) {
+      rockT[i].setSmooth(false);
     }
   }
   for (int i = 5; i >= 0; i--) {
@@ -135,7 +140,7 @@ int main() {
   bg.setPosition({0.f, 0.f});
   bg.setScale({3.f, 3.f});
   bg.setTextureRect(IntRect({0, 0}, {int(width), int(height)}));
-  greenTankTexture.setSmooth(false); 
+  greenTankTexture.setSmooth(false);
   redTankTexture.setSmooth(false);
   greenTank.setScale({4.0f, 4.0f});
   redTank.setScale({4.0f, 4.0f});
