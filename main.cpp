@@ -105,8 +105,8 @@ int main() {
       bulletTexture[i].setSmooth(false);
     }
   }
-  for (int i = 0; i < 6; i++) {
-    if (ammoT[i].loadFromFile("ammo" + to_string(i) + ".png")) {
+  for (int i = 5; i >= 0; i--) {
+    if (ammoT[5 - i].loadFromFile("ammo" + to_string(i) + ".png")) {
       ammoT[i].setSmooth(false);
     }
   }
@@ -129,12 +129,13 @@ int main() {
 
   // --- OBJECT PROPERTIES ---
   cannonball.setOrigin({16.f, 16.f});
-  greenTankTexture.setSmooth(false);
+  greenTankTexture.setSmooth(false); 
   redTankTexture.setSmooth(false);
   greenTank.setScale({4.0f, 4.0f});
   redTank.setScale({4.0f, 4.0f});
   FloatRect ammoBounds = ammoBar.getLocalBounds();
   ammoBar.setOrigin({ammoBounds.size.x / 2.f, ammoBounds.size.y / 2.f});
+  ammoBar.setScale({1.5f, 1.5f});
   FloatRect greenBounds = greenTank.getLocalBounds();
   greenTank.setOrigin({greenBounds.size.x / 2.f, greenBounds.size.y / 2.f});
   FloatRect redBounds = redTank.getLocalBounds();
