@@ -11,6 +11,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
+// DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
 #define BALL_SPEED 150.f         // pixels per second
 #define TANK_SPEED 100.f         // pixels per second
@@ -44,7 +45,7 @@ int main() {
   glEnable(GL_TEXTURE_2D); // open GL!
   Clock clock;
 
-  // all variable declarations go here
+  // --- VARIABLE DECLARATIONS ---
   const short int ballPool = MAX_BALLS;
   unsigned short int ballState[ballPool] = {
       0}; // 0: absent, 1: present, >1: amount of reflections from walls + 1
@@ -76,13 +77,12 @@ int main() {
   bool mousePressed = false;
   unsigned short int keysPressed = 0;
   Keyboard::Key key;
-
   short int buttonX[MAX_BUTTONS], buttonY[MAX_BUTTONS], buttonW[MAX_BUTTONS],
       buttonH[MAX_BUTTONS], buttons = 1;
   short int buttonLayer[MAX_BUTTONS] = {-1};
   // button title and action is hardcoded to array indices
 
-  // button declarations
+  // --- BUTTON DECLARATIONS ---
   // play button
   buttonLayer[0] = 0;
   buttonW[0] = 200;
@@ -90,11 +90,11 @@ int main() {
   buttonX[0] = width / 2 - buttonW[0] / 2;
   buttonY[0] = height / 2 - buttonH[0] / 2;
 
-  // texture imports
+  // --- TEXTURES ---
   Texture greenTankTexture("tank1.png");
   Texture redTankTexture("tank2.png");
 
-  // all object declarations go here
+  // --- OBJECTS ---
   CircleShape cannonball(ballRadius, ballPts);
   Font mojangles("mojangles.ttf");
   mojangles.setSmooth(false);
@@ -104,9 +104,9 @@ int main() {
   Sprite redTank(redTankTexture);
   RectangleShape button({10, 10});
 
-  // sound imports
+  // --- SOUNDS ---
 
-  // all object property edits go here
+  // --- OBJECT PROPERTIES ---
   cannonball.setFillColor(Color::White);
   cannonball.setOrigin(
       {ballRadius, ballRadius}); // set origin to draw circle around the center
@@ -131,11 +131,12 @@ int main() {
     nextBall++;
   }
 
-  // main loop
+  // MAIN LOOP
   while (window.isOpen()) {
     bool mouseJustPressed = false;
     unsigned short int keysJustPressed = 0;
-    // events
+
+    // --- EVENTS ---
     while (const optional event = window.pollEvent()) {
       // manage close and resize
       if (event->is<Event::Closed>())
@@ -205,8 +206,9 @@ int main() {
         }
       }
 
+      // --- DATA STORAGE OPTIMIZATION ---
       if (t % 600 == 0 &&
-          balls != nextBall) { // every 600 ticks (usually 100 seconds)
+          balls != nextBall && lowerBall != 0 && upperBall != balls - 1) { // every 600 ticks (usually 10 seconds)
         // clear up the ball array to optimize
         for (int i = 0; i <= upperBall; i++) {
           if (!ballState[i]) { // if the current slot is empty
@@ -234,7 +236,7 @@ int main() {
         nextBall = (upperBall + 1) % ballPool;
       }
 
-      // processing goes here
+      // --- INPUT AND PROCESSING ---
       Vector2f velGreen{0.f, 0.f};
       Vector2f velRed{0.f, 0.f};
       if (Keyboard::isKeyPressed(Keyboard::Key::W))
@@ -304,6 +306,7 @@ int main() {
       }
     }
 
+    // --- PER FRAME OBJECT PROPERTY EDITS ---
     if (totalTime >= 1.0f) {
       int fps = static_cast<int>(frameCount / totalTime);
       stringstream ss;
@@ -313,10 +316,10 @@ int main() {
       totalTime = 0.0f;
     }
 
-    // shape updates go here
-
-    // draw starts here
+    // --- DRAWING CALLS ---
     window.clear();
+
+    // BUTTONS
     for (int bi = 0; bi < buttons; bi++) {
       if (buttonLayer[bi] == layer) {
         button.setPosition(
@@ -368,6 +371,8 @@ int main() {
         window.draw(buttonText);
       }
     }
+
+    // --- GAME LAYER ---
     if (layer == 1) {
       for (int i = lowerBall; i <= upperBall; i++) {
         if (!ballState[i])
