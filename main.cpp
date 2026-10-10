@@ -105,6 +105,10 @@ int main() {
   redTankTexture.setSmooth(false);
   greenTank.setScale({4.0f, 4.0f});
   redTank.setScale({4.0f, 4.0f});
+  FloatRect greenBounds = greenTank.getLocalBounds();
+  greenTank.setOrigin({greenBounds.size.x / 2.f, greenBounds.size.y / 2.f});
+  FloatRect redBounds = redTank.getLocalBounds();
+  redTank.setOrigin({redBounds.size.x / 2.f, redBounds.size.y / 2.f});
   button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
   fpsText.setFillColor(sf::Color::Green);
@@ -149,10 +153,11 @@ int main() {
                      event->getIf<Event::MouseButtonReleased>()) {
         mousePressed = false;
       } else if (const auto *evnt = event->getIf<Event::MouseMoved>()) {
-        mouseX = evnt-> position.x;
-        mouseY = evnt-> position.y;
+        mouseX = evnt->position.x;
+        mouseY = evnt->position.y;
       } else if (const auto *evnt = event->getIf<Event::KeyPressed>()) {
-        keysPressed++; keysJustPressed++;
+        keysPressed++;
+        keysJustPressed++;
         key = evnt->code;
       } else if (const auto *evnt = event->getIf<Event::KeyReleased>()) {
         keysPressed--;
@@ -163,6 +168,7 @@ int main() {
     totalTime += deltaTime;
     frameCount++;
 
+    // BALL STORAGE MANAGEMENT MWAHAHAHAHAH
     if (layer == 1) {
       // move balls from queue to main array
       while (queueSize > 0) {
@@ -216,7 +222,30 @@ int main() {
       }
 
       // processing goes here
-      for (int i = lowerBall; i <= upperBall; i++) {
+      Vector2f velGreen{0.f, 0.f};
+      Vector2f velRed{0.f, 0.f};
+      if (Keyboard::isKeyPressed(Keyboard::Key::W))
+        velGreen.y -= 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::S))
+        velGreen.y += 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::A))
+        velGreen.x -= 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::D))
+        velGreen.x += 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::Up))
+        velRed.y -= 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::Down))
+        velRed.y += 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::Left))
+        velRed.x -= 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::Right))
+        velRed.x += 1.f;
+      tankX[0] += velGreen.x;
+      tankY[0] += velGreen.y;
+      tankX[1] += velRed.x;
+      tankY[1] += velRed.y;
+
+          for (int i = lowerBall; i <= upperBall; i++) {
         if (!ballState[i])
           continue; // skip processing if theres no ball
         // velocity operations
@@ -296,7 +325,18 @@ int main() {
           button.setFillColor(hovered ? fillHovered : fillNormal);
           button.setOutlineColor(hovered ? outlineHovered : outlineNormal);
           buttonText.setFillColor(hovered ? textHovered : textNormal);
-          if (mouseJustPressed) layer = 1;
+          if (mouseJustPressed) {
+            layer = 1;
+            tankX[0] = 100;
+            tankY[0] = height - 100;
+            tankX[1] = width - 100;
+            tankY[1] = 100;
+            tankA[0] = tankA[1] = 0.f;
+            isTankGreen[1] = false;
+            tankAmmo[0] = tankAmmo[1] = 5;
+            tankHealth[0] = tankHealth[1] = 5;
+            lowerTank = 0; upperTank = 1; tanks = 2;
+          }
           break;
         }
         FloatRect bounds =
