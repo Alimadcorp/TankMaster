@@ -254,7 +254,7 @@ int main() {
             _qBallVY[queueSize] = -cos(tankA[1]) * BALL_SPEED;
             _qBallSource[queueSize] = 1;
             tankCooldown[1] = TANK_COOLDOWN;
-            tankAmmo[myTank]--;
+            tankAmmo[1]--;
             queueSize++;
           }
         }
@@ -567,13 +567,13 @@ int main() {
           // c.setOrigin({cB.position.x + cB.size.x / 2.f,
           //              cB.position.y + cB.size.y / 2.f}); // draw circle by
           //              CENTER
-          // window.draw(c);
+          // window.draw(c); 
           window.draw(greenTank);
         } else {
           redTank.setPosition({tankX[i], tankY[i]});
           redTank.setRotation(radians(tankA[i]));
           if (tankInv[i] > 0)
-            redTank.setColor(
+            redTank.setColor( 
                 Color(255, 255, 255, (tankInv[i] / 30) % 2 ? 255 : 130));
           else
             redTank.setColor(Color::White);
