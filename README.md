@@ -60,6 +60,6 @@ A tank can shoot a cannonball from it's ammo, which has a size of 5, and refills
 - Use of custom classes or data structures is not allowed
 - Use of any library except SFML/*.hpp is not allowed
 
-## Use of AI
+**Use of AI**:
 
 In all good faith, I declare that no part of the code present in this repository was written by AI. It was either written by me, or any of my two team members. Help from AI in case of errors may have been taken.
