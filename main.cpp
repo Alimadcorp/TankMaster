@@ -9,8 +9,8 @@
 #define meow                    /* :3c */
 #define purrrr                  /* purrrrrrrrrrrrrr */
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
-#define BALL_SPEED 200.f        // pixels per second
-#define TANK_SPEED 150.f        // pixels per second
+#define BALL_SPEED 300.f        // pixels per second
+#define TANK_SPEED 200.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
 #define TANK_HIT_RADIUS 20.f
 #define MAX_BALLS 2048
@@ -60,7 +60,7 @@ int main() {
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
                      queueSize = 0,
                      upperBall = 0; // ball to which we gotta draw
-  float totalTime = 0.0f, ballRadius = 2.f;
+  float totalTime = 0.0f, ballRadius = 3.f;
   float mouseX = 0.f, mouseY = 0.f; // will be used a lot so declared here
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
@@ -92,7 +92,16 @@ int main() {
   purrrr buttonH[0] = 40;
   buttonX[0] = width / 2 - buttonW[0] / 2;
   buttonY[0] = height / 2 - buttonH[0] / 2;
-  Vector2f rocks[3] = {{width / 2.f, height * 2.f / 3.f}, {width * 1.f / 4.f, height * 2.f / 5.f}, {width * 2.f / 3.f, height * 4.f / 7.f}};
+  Vector2f rocks[10] = {{width / 2.f, height * 2.f / 3.f},
+                        {width * 1.f / 4.f, height * 2.f / 5.f},
+                        {width * 2.f / 3.f, height * 4.f / 7.f},
+                        {width * 4.f / 5.f, height * 1.f / 5.f},
+                        {width * 1.f / 5.f, height * 4.f / 5.f},
+                        {width * 1.f / 8.f, height * 1.f / 8.f},
+                        {width * 7.f / 8.f, height * 7.f / 8.f},
+                        {width * 1.f / 2.f, height * 1.f / 4.f},
+                        {width * 3.f / 4.f, height * 3.f / 4.f},
+                        {width * 3.f / 8.f, height * 7.f / 8.f}};
 
   // --- TEXTURES ---
   Texture greenTankTexture("tank1.png");
@@ -154,9 +163,6 @@ int main() {
   rock3.setTextureRect(IntRect({0, 22}, {12, 10}));
   purrrr fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
-  rock1.setPosition(rocks[0]);
-  rock2.setPosition(rocks[1]);
-  rock3.setPosition(rocks[2]);
   rock1.setScale({3.f, 3.f});
   rock2.setScale({3.f, 3.f});
   rock3.setScale({3.f, 3.f});
@@ -558,10 +564,10 @@ int main() {
           greenTank.setRotation(radians(tankA[i]));
           if (tankInv[i] > 0)
             greenTank.setColor(
-                Color(255, 255, 255, (tankInv[i] / 30) % 2 ? 255 : 130));
-          else
+                Color(255, 255, 255, (tankInv[i] / 10) % 2 ? 255 : 130));
+          else 
             greenTank.setColor(Color::White);
-          // CircleShape c(TANK_HIT_RADIUS);
+          // CircleShape c(TANK_HIT_RADIUS); 
           // c.setOutlineColor(Color::White);
           // c.setOutlineThickness(1);
           // c.setPosition({tankX[i], tankY[i]});
@@ -569,14 +575,14 @@ int main() {
           // c.setOrigin({cB.position.x + cB.size.x / 2.f,
           //              cB.position.y + cB.size.y / 2.f}); // draw circle by
           //              CENTER
-          // window.draw(c); 
+          // window.draw(c);
           window.draw(greenTank);
         } else {
           redTank.setPosition({tankX[i], tankY[i]});
           redTank.setRotation(radians(tankA[i]));
           if (tankInv[i] > 0)
-            redTank.setColor( 
-                Color(255, 255, 255, (tankInv[i] / 30) % 2 ? 255 : 130));
+            redTank.setColor(
+                Color(255, 255, 255, (tankInv[i] / 10) % 2 ? 255 : 130));
           else
             redTank.setColor(Color::White);
           window.draw(redTank);
@@ -587,9 +593,11 @@ int main() {
         ammoBar.setColor(Color(255, 255, 255, tankCooldown[i] > 0 ? 123 : 255));
         window.draw(ammoBar);
       }
-      window.draw(rock1);
-      window.draw(rock2);
-      window.draw(rock3);
+      for (int i = 0; i < 10; i++) {
+        Sprite rockRef = i % 3 == 0 ? rock1 : (i % 3 == 1 ? rock2 : rock3);
+        rockRef.setPosition(rocks[i]);
+        window.draw(rockRef);
+      }
       // draw glares above everything
       for (int i = 0; i < MAX_GLARES; i++) {
         if (glare[i]) {

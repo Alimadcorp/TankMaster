@@ -4,10 +4,12 @@ Todo
 [x] Add glares
 [x] Limit tank mvoement to bounds
 [x] Fix the ammo sprites, and implement ammo and cooldown
+[ ] Timer and win condition
 [ ] Create tank index to position algorithm
 [ ] Shield
 [ ] Speed boost
-[ ] Two shot
+[ ] Two shots
+[ ] Three shots
 [ ] Polish
     [x] Add background
     [ ] Add intro
