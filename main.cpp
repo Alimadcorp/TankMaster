@@ -6,6 +6,7 @@
 #include <SFML/Window.hpp>
 
 // DEFINITIONS OF GAME CONSTANTS
+#define meow /* :3c */
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
 #define BALL_SPEED 200.f        // pixels per second
 #define TANK_SPEED 150.f        // pixels per second
@@ -45,7 +46,7 @@ int main() {
   unsigned short int ballState[ballPool] = {
       0}; // 0: absent, 1: present, >1: amount of reflections from walls + 1
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
-      ballsVY[ballPool], ballsA[ballPool];
+      ballsVY[ballPool], ballsA[ballPool]; meow
   unsigned short int ballSource[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
       _qBallVY[ballPool];
@@ -81,6 +82,7 @@ int main() {
 
   // --- BUTTON DECLARATIONS ---
   // play button
+  meow
   buttonLayer[0] = 0;
   buttonW[0] = 200;
   buttonH[0] = 40;
@@ -127,6 +129,7 @@ int main() {
   fpsText.setCharacterSize(24);
   fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
+  meow
 
   while (nextBall < balls) {
     ballsX[nextBall] = 100 + nextBall * 10;
@@ -281,6 +284,7 @@ int main() {
         velGreen.x -= 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::D))
         velGreen.x += 1.f;
+      meow
       if (Keyboard::isKeyPressed(Keyboard::Key::Up))
         velRed.y += 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::Down))
@@ -389,6 +393,7 @@ int main() {
     }
 
     // --- DRAWING CALLS ---
+    meow
     window.clear();
     // BUTTONS
     for (int bi = 0; bi < buttons; bi++) {
