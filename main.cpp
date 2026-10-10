@@ -1,5 +1,6 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Texture.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
@@ -99,6 +100,7 @@ int main() {
   Texture bulletTexture[4];
   Texture ammoT[6];
   Texture radialBlur("radial.png");
+  Texture sand("sand.png");
 
   for (int i = 0; i < 4; i++) {
     if (bulletTexture[i].loadFromFile("bullet" + to_string(i) + ".png")) {
@@ -113,37 +115,43 @@ int main() {
 
   // --- OBJECTS ---
   Font mojangles("mojangles.ttf");
-  mojangles.setSmooth(false);
   Text fpsText(mojangles);
   Text buttonText(mojangles);
-  meow Sprite cannonball(bulletTexture[0]);
+  Sprite cannonball(bulletTexture[0]);
   Sprite ammoBar(ammoT[5]);
   Sprite greenTank(greenTankTexture);
   Sprite redTank(redTankTexture);
   Sprite glareSprite(radialBlur);
-  FloatRect glareBounds = glareSprite.getLocalBounds();
-  glareSprite.setOrigin({glareBounds.size.x / 2.f, glareBounds.size.y / 2.f});
+  Sprite bg(sand);
   RectangleShape button({10, 10});
 
   // --- SOUNDS ---
 
   // --- OBJECT PROPERTIES ---
   cannonball.setOrigin({16.f, 16.f});
+  mojangles.setSmooth(false);
+  sand.setSmooth(false);
+  sand.setRepeated(true);
+  bg.setPosition({0.f, 0.f});
+  bg.setScale({3.f, 3.f});
+  bg.setTextureRect(IntRect({0, 0}, {int(width), int(height)}));
   greenTankTexture.setSmooth(false); 
   redTankTexture.setSmooth(false);
   greenTank.setScale({4.0f, 4.0f});
   redTank.setScale({4.0f, 4.0f});
-  FloatRect ammoBounds = ammoBar.getLocalBounds();
-  ammoBar.setOrigin({ammoBounds.size.x / 2.f, ammoBounds.size.y / 2.f});
-  ammoBar.setScale({1.5f, 1.5f});
-  FloatRect greenBounds = greenTank.getLocalBounds();
-  greenTank.setOrigin({greenBounds.size.x / 2.f, greenBounds.size.y / 2.f});
-  FloatRect redBounds = redTank.getLocalBounds();
-  redTank.setOrigin({redBounds.size.x / 2.f, redBounds.size.y / 2.f});
+  ammoBar.setScale({1.3f, 1.3f});
   button.setOutlineThickness(-2);
   fpsText.setCharacterSize(24);
   purrrr fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
+  FloatRect glareBounds = glareSprite.getLocalBounds();
+  FloatRect ammoBounds = ammoBar.getLocalBounds();
+  FloatRect greenBounds = greenTank.getLocalBounds();
+  FloatRect redBounds = redTank.getLocalBounds();
+  glareSprite.setOrigin({glareBounds.size.x / 2.f, glareBounds.size.y / 2.f});
+  ammoBar.setOrigin({ammoBounds.size.x / 2.f, ammoBounds.size.y / 2.f});
+  greenTank.setOrigin({greenBounds.size.x / 2.f, greenBounds.size.y / 2.f});
+  redTank.setOrigin({redBounds.size.x / 2.f, redBounds.size.y / 2.f});
 
   while (nextBall < balls) {
     ballsX[nextBall] = 100 + nextBall * 10;
@@ -152,7 +160,7 @@ int main() {
     meow ballsVY[nextBall] = BALL_SPEED + nextBall * BALL_SPEED;
     nextBall++;
   }
-  
+
   // MAIN LOOP
   while (window.isOpen()) {
     bool mouseJustPressed = false;
@@ -447,6 +455,7 @@ int main() {
 
     // --- DRAWING CALLS ---
     meow window.clear(); // clear the window for next frame
+    window.draw(bg);
     // BUTTONS
     for (int bi = 0; bi < buttons; bi++) {
       if (buttonLayer[bi] ==
