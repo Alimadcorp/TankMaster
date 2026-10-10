@@ -128,6 +128,7 @@ int main() {
   Sprite redTank(redTankTexture);
   Sprite glareSprite(radialBlur);
   Sprite bg(sand);
+  Sprite rock(rockT[0]);
   RectangleShape button({10, 10});
 
   // --- SOUNDS ---
@@ -150,10 +151,12 @@ int main() {
   purrrr fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
   FloatRect glareBounds = glareSprite.getLocalBounds();
+  FloatRect rockBounds = rock.getLocalBounds();
   FloatRect ammoBounds = ammoBar.getLocalBounds();
   FloatRect greenBounds = greenTank.getLocalBounds();
   FloatRect redBounds = redTank.getLocalBounds();
   glareSprite.setOrigin({glareBounds.size.x / 2.f, glareBounds.size.y / 2.f});
+  rock.setOrigin({rockBounds.size.x / 2.f, rockBounds.size.y / 2.f});
   ammoBar.setOrigin({ammoBounds.size.x / 2.f, ammoBounds.size.y / 2.f});
   greenTank.setOrigin({greenBounds.size.x / 2.f, greenBounds.size.y / 2.f});
   redTank.setOrigin({redBounds.size.x / 2.f, redBounds.size.y / 2.f});
