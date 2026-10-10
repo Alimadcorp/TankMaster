@@ -8,7 +8,7 @@
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
 #define purrrr                  /* purrrrrrrrrrrrrr */
-#define BALL_REFLECTIONS 30      // this is max amt of ball reflections
+#define BALL_REFLECTIONS 4      // this is max amt of ball reflections
 #define BALL_SPEED 300.f        // pixels per second
 #define TANK_SPEED 200.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
