@@ -136,8 +136,9 @@ int main() {
         // convert screen pixel position to world coordinates
         // this is initially effect less, but as soon as we scale or resize the
         // view, the pixel position is no longer equivalent to world position
-        mouseX = evnt->position.x;
-        mouseY = evnt->position.y;
+        Vector2f worldPos = window.mapPixelToCoords(evnt->position); // mapped mouse coords
+        mouseX = worldPos.x;
+        mouseY = worldPos.y;
         mousePressed = mouseJustPressed = true;
         if (layer == 0) {
           // if ()
@@ -153,8 +154,9 @@ int main() {
                      event->getIf<Event::MouseButtonReleased>()) {
         mousePressed = false;
       } else if (const auto *evnt = event->getIf<Event::MouseMoved>()) {
-        mouseX = evnt->position.x;
-        mouseY = evnt->position.y;
+        Vector2f worldPos = window.mapPixelToCoords(evnt->position); // mapped mouse coords
+        mouseX = worldPos.x;
+        mouseY = worldPos.y;
       } else if (const auto *evnt = event->getIf<Event::KeyPressed>()) {
         keysPressed++;
         keysJustPressed++;
@@ -325,7 +327,7 @@ int main() {
           button.setFillColor(hovered ? fillHovered : fillNormal);
           button.setOutlineColor(hovered ? outlineHovered : outlineNormal);
           buttonText.setFillColor(hovered ? textHovered : textNormal);
-          if (mouseJustPressed) {
+          if (mouseJustPressed && hovered) {
             layer = 1;
             tankX[0] = 100;
             tankY[0] = height - 100;
