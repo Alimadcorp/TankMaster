@@ -11,7 +11,14 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
-#define BALL_REFLECTIONS 3 // this is max amt of ball reflections
+#define BALL_REFLECTIONS 3      // this is max amt of ball reflections
+#define BALL_SPEED 150.f         // pixels per second
+#define TANK_SPEED 100.f         // pixels per second
+#define TANK_ROTATION_SPEED 2.f // radians per second
+#define MAX_BALLS 2048
+#define MAX_TANKS 2048
+#define MAX_BUTTONS 100
+#define PORT 6767
 #define PI                                                                     \
   3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067 // 100 digits of pi
 
@@ -38,7 +45,7 @@ int main() {
   Clock clock;
 
   // all variable declarations go here
-  const short int ballPool = 2048;
+  const short int ballPool = MAX_BALLS;
   unsigned short int ballState[ballPool] = {
       0}; // 0: absent, 1: present, >1: amount of reflections from walls + 1
   float ballsX[ballPool], ballsY[ballPool], ballsVX[ballPool],
@@ -46,20 +53,22 @@ int main() {
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
       _qBallVY[ballPool]; // use a queue of balls to insert. we make arraylist
                           // operations after recieving all shot inputs
-  bool isBallGreen[2048]; // store whether the ball was shot by a red or green
-                          // tank
+  bool isBallGreen[ballPool]; // store whether the ball was shot by a red or
+                              // green tank
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
                      queueSize = 0,
                      upperBall = 0; // ball to which we gotta draw
-  float totalTime = 0.0f, ballRadius = 2.f, ballSpeed = 50.f;
+  float totalTime = 0.0f, ballRadius = 2.f;
   float mouseX = 0.f, mouseY = 0.f; // will be used a lot so declared here
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
-  float tankX[2048], tankY[2048],
-      tankA[2048]; // array of all tank X & Y positions, and tank angles (always
-                   // use RADIAN)
-  unsigned short int tankAmmo[2048], tankHealth[2048]; // health and ammos
-  bool isTankGreen[2048] = {true}; // array storing the team or side of tanks
+  float tankX[MAX_TANKS], tankY[MAX_TANKS],
+      tankA[MAX_TANKS]; // array of all tank X & Y positions, and tank angles
+                        // (always use RADIAN)
+  unsigned short int tankAmmo[MAX_TANKS],
+      tankHealth[MAX_TANKS]; // health and ammos
+  bool isTankGreen[MAX_TANKS] = {
+      true}; // array storing the team or side of tanks
   unsigned short int lowerTank = 0, upperTank = 0;
   unsigned short int tanks = 0; // amount of tanks currently playing
   unsigned short int layer = 0; // currently in game layer
@@ -68,10 +77,10 @@ int main() {
   unsigned short int keysPressed = 0;
   Keyboard::Key key;
 
-  short int buttonX[100], buttonY[100], buttonW[100], buttonH[100],
-      buttons = 1,
-      buttonLayer[100] = {
-          -1}; // button title and action is hardcoded to array indices
+  short int buttonX[MAX_BUTTONS], buttonY[MAX_BUTTONS], buttonW[MAX_BUTTONS],
+      buttonH[MAX_BUTTONS], buttons = 1;
+  short int buttonLayer[MAX_BUTTONS] = {-1};
+  // button title and action is hardcoded to array indices
 
   // button declarations
   // play button
@@ -117,8 +126,8 @@ int main() {
   while (nextBall < balls) {
     ballsX[nextBall] = 100 + nextBall * 10;
     ballsY[nextBall] = 100 + nextBall * 10;
-    ballsVX[nextBall] = ballSpeed;
-    ballsVY[nextBall] = ballSpeed + nextBall * ballSpeed;
+    ballsVX[nextBall] = BALL_SPEED;
+    ballsVY[nextBall] = BALL_SPEED + nextBall * BALL_SPEED;
     nextBall++;
   }
 
@@ -136,7 +145,8 @@ int main() {
         // convert screen pixel position to world coordinates
         // this is initially effect less, but as soon as we scale or resize the
         // view, the pixel position is no longer equivalent to world position
-        Vector2f worldPos = window.mapPixelToCoords(evnt->position); // mapped mouse coords
+        Vector2f worldPos =
+            window.mapPixelToCoords(evnt->position); // mapped mouse coords
         mouseX = worldPos.x;
         mouseY = worldPos.y;
         mousePressed = mouseJustPressed = true;
@@ -154,7 +164,8 @@ int main() {
                      event->getIf<Event::MouseButtonReleased>()) {
         mousePressed = false;
       } else if (const auto *evnt = event->getIf<Event::MouseMoved>()) {
-        Vector2f worldPos = window.mapPixelToCoords(evnt->position); // mapped mouse coords
+        Vector2f worldPos =
+            window.mapPixelToCoords(evnt->position); // mapped mouse coords
         mouseX = worldPos.x;
         mouseY = worldPos.y;
       } else if (const auto *evnt = event->getIf<Event::KeyPressed>()) {
@@ -227,27 +238,30 @@ int main() {
       Vector2f velGreen{0.f, 0.f};
       Vector2f velRed{0.f, 0.f};
       if (Keyboard::isKeyPressed(Keyboard::Key::W))
-        velGreen.y -= 1.f;
-      if (Keyboard::isKeyPressed(Keyboard::Key::S))
         velGreen.y += 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::S))
+        velGreen.y -= 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::A))
         velGreen.x -= 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::D))
         velGreen.x += 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::Up))
-        velRed.y -= 1.f;
-      if (Keyboard::isKeyPressed(Keyboard::Key::Down))
         velRed.y += 1.f;
+      if (Keyboard::isKeyPressed(Keyboard::Key::Down))
+        velRed.y -= 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::Left))
         velRed.x -= 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::Right))
         velRed.x += 1.f;
-      tankX[0] += velGreen.x;
-      tankY[0] += velGreen.y;
-      tankX[1] += velRed.x;
-      tankY[1] += velRed.y;
 
-          for (int i = lowerBall; i <= upperBall; i++) {
+      tankA[0] += velGreen.x * deltaTime * TANK_ROTATION_SPEED;
+      tankX[0] += velGreen.y * sin(tankA[0]) * deltaTime * TANK_SPEED;
+      tankY[0] -= velGreen.y * cos(tankA[0]) * deltaTime * TANK_SPEED;
+      tankA[1] += velRed.x * deltaTime * TANK_ROTATION_SPEED;
+      tankX[1] += velRed.y * sin(tankA[1]) * deltaTime * TANK_SPEED;
+      tankY[1] -= velRed.y * cos(tankA[1]) * deltaTime * TANK_SPEED;
+
+      for (int i = lowerBall; i <= upperBall; i++) {
         if (!ballState[i])
           continue; // skip processing if theres no ball
         // velocity operations
@@ -337,7 +351,9 @@ int main() {
             isTankGreen[1] = false;
             tankAmmo[0] = tankAmmo[1] = 5;
             tankHealth[0] = tankHealth[1] = 5;
-            lowerTank = 0; upperTank = 1; tanks = 2;
+            lowerTank = 0;
+            upperTank = 1;
+            tanks = 2;
           }
           break;
         }
