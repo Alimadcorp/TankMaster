@@ -1,15 +1,16 @@
-#include <SFML/System.hpp>
-#include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/OpenGL.hpp>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
 #define BALL_SPEED 150.f        // pixels per second
 #define TANK_SPEED 100.f        // pixels per second
 #define TANK_ROTATION_SPEED 2.f // radians per second
+#define TANK_HIT_RADIUS 20.f
 #define MAX_BALLS 2048
 #define MAX_TANKS 2048
 #define MAX_BUTTONS 100
@@ -165,6 +166,7 @@ int main() {
             window.mapPixelToCoords(evnt->position); // mapped mouse coords
         mouseX = worldPos.x;
         mouseY = worldPos.y;
+      // keyboard events
       } else if (const auto *evnt = event->getIf<Event::KeyPressed>()) {
         keysPressed++;
         keysJustPressed++;
@@ -322,6 +324,23 @@ int main() {
           ballsVY[i] *= -1.f;
           ballState[i]++;
         }
+        // collide with tanks
+        for (int j = lowerTank; j <= upperTank; j++) {
+          if (isBallGreen[j] == isTankGreen[j])
+            continue; // no friendly fire
+          float dx = ballsX[i] - tankX[j];
+          float dy = ballsY[i] - tankY[j];
+          float distSquared = (dx * dx) + (dy * dy);
+          float tRadius = TANK_HIT_RADIUS + ballRadius;
+          if (distSquared <= (tRadius * tRadius)) {
+            if (tankHealth[j] > 0)
+              tankHealth[j]--; // damage the tank
+            else
+              tankA[j] = 0;
+            ballState[i] = BALL_REFLECTIONS + 1;
+            break; // ball is dead, stop checking other tanks
+          }
+        }
         if (ballState[i] > BALL_REFLECTIONS) {
           ballState[i] = 0;
           if (upperBall == i) {
@@ -421,6 +440,14 @@ int main() {
           // assign position and rotation from stored array to the sprites
           greenTank.setPosition({tankX[i], tankY[i]});
           greenTank.setRotation(radians(tankA[i]));
+          // CircleShape c(TANK_HIT_RADIUS);
+          // c.setOutlineColor(Color::White);
+          // c.setOutlineThickness(1);
+          // c.setPosition({tankX[i], tankY[i]});
+          // FloatRect cB = c.getLocalBounds();
+          // c.setOrigin({cB.position.x + cB.size.x / 2.f,
+          //              cB.position.y + cB.size.y / 2.f}); // draw circle by CENTER
+          // window.draw(c);
           window.draw(greenTank);
         } else {
           redTank.setPosition({tankX[i], tankY[i]});
