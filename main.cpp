@@ -7,6 +7,7 @@
 
 // DEFINITIONS OF GAME CONSTANTS
 #define meow /* :3c */
+#define purrrr /* purrrrrrrrrrrrrr */
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
 #define BALL_SPEED 200.f        // pixels per second
 #define TANK_SPEED 150.f        // pixels per second
@@ -30,7 +31,7 @@ int main() {
   settings.stencilBits = 8;
   settings.antiAliasingLevel = 4;
   settings.majorVersion = 3;
-  settings.minorVersion = 0;
+  settings.minorVersion = 0; purrrr
   RenderWindow window(VideoMode({width, height}), "TankMaster", Style::Default,
                       State::Fullscreen, settings);
   width = window.getSize().x;
@@ -440,6 +441,7 @@ int main() {
           }
           break;
         }
+        meow
         FloatRect bounds =
             buttonText.getLocalBounds(); // get size of rendered text
         buttonText.setOrigin(
