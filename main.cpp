@@ -1,12 +1,13 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Texture.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
-#define BALL_REFLECTIONS 3
+#define BALL_REFLECTIONS 3 // this is max amt of ball reflections
 
 using namespace sf;
 using namespace std;
@@ -45,14 +46,16 @@ int main() {
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
 
+  // texture imports
+  Texture greenTankTexture("tank1.png");
+  Texture redTankTexture("tank2.png");
+  
   // all object declarations go here
   CircleShape cannonball(ballRadius, ballPts);
   Font mojangles("mojangles.ttf");
   Text fpsText(mojangles);
-  RectangleShape greenTank({0, 0});
-  RectangleShape redTank({0, 0});
-
-  // texture imports
+  Sprite greenTank(greenTankTexture);
+  Sprite redTank(redTankTexture);
 
   // sound imports
 
@@ -60,6 +63,8 @@ int main() {
   cannonball.setFillColor(Color::White);
   cannonball.setOrigin(
       {ballRadius, ballRadius}); // set origin to draw circle around the center
+  greenTankTexture.setSmooth(false); redTankTexture.setSmooth(false);
+  greenTank.setScale({4.0f, 4.0f}); redTank.setScale({4.0f, 4.0f});
   fpsText.setCharacterSize(24);
   fpsText.setFillColor(sf::Color::Green);
   fpsText.setPosition({10.f, 10.f});
