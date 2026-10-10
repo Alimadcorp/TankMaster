@@ -271,6 +271,7 @@ int main() {
       }
 
       // --- INPUT AND PROCESSING ---
+      // tank movement
       Vector2f velGreen{0.f, 0.f};
       Vector2f velRed{0.f, 0.f};
       if (Keyboard::isKeyPressed(Keyboard::Key::W))
@@ -289,7 +290,6 @@ int main() {
         velRed.x -= 1.f;
       if (Keyboard::isKeyPressed(Keyboard::Key::Right))
         velRed.x += 1.f;
-
       if (onlineMode)
         velGreen += velRed;
 
@@ -300,6 +300,9 @@ int main() {
         tankA[1] += velRed.x * deltaTime * TANK_ROTATION_SPEED;
         tankX[1] += velRed.y * sin(tankA[1]) * deltaTime * TANK_SPEED;
         tankY[1] -= velRed.y * cos(tankA[1]) * deltaTime * TANK_SPEED;
+      }
+      for (int i = 0; i <= upperTank; i++) {
+        if (tankInv[i] > 0) tankInv[i]--;
       }
 
       // MOVEMENT AND COLLISION DETECTION
@@ -349,10 +352,12 @@ int main() {
                 ballsVY[i] = (dy / spd) * BALL_SPEED;
               }
               ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]); // calculate angle
+              ballSource[i] = j; // the tank from which the bullet reflects now
+                                 // becomes the source
             } else {
               tankKills[ballSource[i]]++;
               tankDeaths[j]++;
-              tankInv[j] = 120;
+              tankInv[j] = 149;
               ballState[i] = BALL_REFLECTIONS + 1;
               break; // ball is dead, stop checking other tanks
             }
@@ -463,6 +468,8 @@ int main() {
           // assign position and rotation from stored array to the sprites
           greenTank.setPosition({tankX[i], tankY[i]});
           greenTank.setRotation(radians(tankA[i]));
+          if(tankInv[i] > 0) greenTank.setColor(Color(255, 255, 255, (tankInv[i] / 30) % 2 ? 255 : 130));
+          else greenTank.setColor(Color::White);
           ammoBar.setTextureRect(IntRect({15, 150}, {currentAmmoWidth, 10}));
           // CircleShape c(TANK_HIT_RADIUS);
           // c.setOutlineColor(Color::White);
@@ -477,6 +484,8 @@ int main() {
         } else {
           redTank.setPosition({tankX[i], tankY[i]});
           redTank.setRotation(radians(tankA[i]));
+          if(tankInv[i] > 0) redTank.setColor(Color(255, 255, 255, (tankInv[i] / 30) % 2 ? 255 : 130));
+          else redTank.setColor(Color::White);
           ammoBar.setTextureRect(IntRect({15, 110}, {currentAmmoWidth, 10}));
           window.draw(redTank);
         }
