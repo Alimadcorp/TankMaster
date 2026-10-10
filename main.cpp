@@ -1,15 +1,9 @@
-#include <SFML/Audio.hpp>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
-#include <SFML/Graphics/Text.hpp>
-#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Audio.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/OpenGL.hpp>
-#include <SFML/System.hpp>
-#include <SFML/System/Angle.hpp>
-#include <SFML/Window.hpp>
-#include <SFML/Window/Event.hpp>
-#include <SFML/Window/Keyboard.hpp>
 
 // DEFINITIONS OF GAME CONSTANTS
 #define BALL_REFLECTIONS 3      // this is max amt of ball reflections
@@ -53,9 +47,9 @@ int main() {
       ballsVY[ballPool]; // want to creat an array list here
   float _qBallX[ballPool], _qBallY[ballPool], _qBallVX[ballPool],
       _qBallVY[ballPool],
-      _qBallGreen[ballPool]; // use a queue of balls to insert. we make
-                             // arraylist operations after recieving all shot
-                             // inputs
+      _qBallGreen[ballPool];  // use a queue of balls to insert. we make
+                              // arraylist operations after recieving all shot
+                              // inputs
   bool isBallGreen[ballPool]; // store whether the ball was shot by a red or
                               // green tank
   unsigned short int balls = 0, nextBall = 0, lowerBall = 0, ballPts = 12,
@@ -178,7 +172,7 @@ int main() {
       } else if (const auto *evnt = event->getIf<Event::KeyReleased>()) {
         keysPressed--;
         Keyboard::Key k = evnt->code;
-        if (onlineMode) {
+        if (onlineMode) { // in onlineMode, only shoot from our tank
           if (k == Keyboard::Key::W || k == Keyboard::Key::Up) {
             _qBallX[queueSize] = tankX[myTank];
             _qBallY[queueSize] = tankY[myTank];
@@ -187,8 +181,9 @@ int main() {
             _qBallGreen[queueSize] = isTankGreen[myTank];
             queueSize++;
           }
-        } else {
-          if (k == Keyboard::Key::W) {
+        } else { // hi, this is a comment
+          if (k ==
+              Keyboard::Key::W) { // in offline mode, shoot based on key pressed
             _qBallX[queueSize] = tankX[myTank];
             _qBallY[queueSize] = tankY[myTank];
             _qBallVX[queueSize] = sin(tankA[myTank]) * BALL_SPEED;
@@ -384,27 +379,29 @@ int main() {
             layer = 1;
             // this would be offline mode
             onlineMode = false;
-            tankX[0] = 100;
+            tankX[0] = 100; // lower left of screen
             tankY[0] = height - 100;
-            tankX[1] = width - 100;
+            tankX[1] = width - 100; // upper right of screen
             tankY[1] = 100;
             tankA[0] = tankA[1] = 0.f;
-            isTankGreen[1] = false;
-            tankAmmo[0] = tankAmmo[1] = 5;
-            tankHealth[0] = tankHealth[1] = 5;
-            lowerTank = 0;
-            upperTank = 1;
+            isTankGreen[1] = false;            // the upper right tank is red
+            tankAmmo[0] = tankAmmo[1] = 5;     // initial ammo and
+            tankHealth[0] = tankHealth[1] = 5; // health
+            lowerTank = 0; // there are two tanks, starting from index 0,
+            upperTank = 1; // going up to index 1
             tanks = 2;
           }
           break;
         }
         FloatRect bounds =
             buttonText.getLocalBounds(); // get size of rendered text
-        buttonText.setOrigin({bounds.position.x + bounds.size.x / 2.f,
-                              bounds.position.y + bounds.size.y / 2.f});
+        buttonText.setOrigin(
+            {bounds.position.x + bounds.size.x / 2.f,
+             bounds.position.y + bounds.size.y / 2.f}); // draw text by CENTER
         buttonText.setPosition(
             {static_cast<float>(buttonX[bi] + buttonW[bi] / 2.f),
-             static_cast<float>(buttonY[bi] + buttonH[bi] / 2.f)});
+             static_cast<float>(buttonY[bi] +
+                                buttonH[bi] / 2.f)}); // draw text on button
         window.draw(button);
         window.draw(buttonText);
       }
@@ -412,14 +409,16 @@ int main() {
 
     // --- GAME LAYER ---
     if (layer == 1) {
-      for (int i = lowerBall; i <= upperBall; i++) {
-        if (!ballState[i])
+      for (int i = lowerBall; i <= upperBall; i++) { // draw all cannon balls
+        if (!ballState[i]) // if ballState is zero, skip
           continue;
         cannonball.setPosition({ballsX[i], ballsY[i]});
         window.draw(cannonball);
       }
-      for (int i = lowerTank; i <= upperTank; i++) {
+      for (int i = lowerTank; i <= upperTank;
+           i++) { // draw all green & red tanks
         if (isTankGreen[i]) {
+          // assign position and rotation from stored array to the sprites
           greenTank.setPosition({tankX[i], tankY[i]});
           greenTank.setRotation(radians(tankA[i]));
           window.draw(greenTank);
@@ -430,9 +429,9 @@ int main() {
         }
       }
     }
-    window.draw(fpsText);
-    window.display();
-    t++; // tick a frame
+    window.draw(fpsText); // show framerate
+    window.display();     // push the draw buffer to the view
+    t++;                  // tick a frame
   }
 
   return 0;
