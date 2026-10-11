@@ -4,7 +4,7 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#ifdef WIN_32
+#if defined(_WIN32) || defined(_WIN64)
 #include <cmath>
 #endif
 #ifdef __APPLE__
