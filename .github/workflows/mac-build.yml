@@ -27,6 +27,7 @@ jobs:
           -L"$SFML_PREFIX/lib" \
           -framework OpenGL \
           -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio \
+          -Wno-deprecated-declarations \
           -o mac-app-binary
 
     - name: Upload Binary Artifact

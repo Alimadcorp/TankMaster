@@ -4,9 +4,13 @@
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#if defined(WIN_32)
+#ifdef WIN_32
 #include <cmath>
 #endif
+#ifdef __APPLE__
+#include <sstream>
+#endif
+
 
 #pragma region CONSTANTS
 // DEFINITIONS OF GAME CONSTANTS
