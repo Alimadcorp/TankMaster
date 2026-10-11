@@ -1,6 +1,7 @@
 @echo off
-g++ -std=c++17 main.cpp -lGL -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio
+g++ -std=c++17 main.cpp -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio -lopengl32 -lglu32 -o main.exe
 if %errorlevel% equ 0 (
-    a.exe
+    main.exe
 )
 pause
+s
