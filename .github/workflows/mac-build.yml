@@ -1,0 +1,35 @@
+name: macOS SFML Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install SFML via Homebrew
+      run: |
+        brew install sfml
+
+    - name: Compile and Run Application
+      run: |
+        # 1. Dynamically capture the Homebrew installation path
+        SFML_PREFIX=$(brew --prefix sfml)
+        
+        # 2. Compile with explicit Homebrew search paths and the macOS OpenGL framework
+        g++ -std=c++17 main.cpp \
+          -I"$SFML_PREFIX/include" \
+          -L"$SFML_PREFIX/lib" \
+          -framework OpenGL \
+          -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lsfml-audio \
+          -o app
+          
+        # 3. Execute the binary
+        ./app
