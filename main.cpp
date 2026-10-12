@@ -1469,7 +1469,7 @@ int main() {
 
         // tankCollide
         for (int j = lowerTank; j <= upperTank; j++) {
-          if ((isTankGreen[ballSource[i]] == isTankGreen[j]) && onlineMode)
+          if (isTankGreen[ballSource[i]] == isTankGreen[j])
             continue; // no friendly fire in online mode
           float dx = ballsX[i] - tankX[j];
           float dy = ballsY[i] - tankY[j];
@@ -1655,6 +1655,7 @@ int main() {
         // cannonball.setTexture(bulletTexture[(t / 10 + i) % 4]);
         cannonball.setPosition({ballsX[i], ballsY[i]});
         cannonball.setRotation(radians(ballsA[i]));
+        cannonball.setFillColor(isTankGreen[ballSource[i]] ? Color(10, 150, 10) : Color(150, 10, 10));
         window.draw(cannonball);
       }
       for (int i = lowerTank; i <= upperTank;
@@ -1663,6 +1664,10 @@ int main() {
         if (i == myTank) {
           tankLX[i] = tankX[i];
           tankLY[i] = tankY[i];
+        }
+        if (!onlineMode) {
+          tankLX[1] = tankX[1];
+          tankLY[1] = tankY[1];
         }
         if (isTankGreen[i]) {
           // assign position and rotation from stored array to the sprites
