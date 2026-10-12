@@ -11,7 +11,6 @@
 #include <sstream>
 #endif
 
-
 #pragma region CONSTANTS
 // DEFINITIONS OF GAME CONSTANTS
 #define meow                    /* :3c */
@@ -22,7 +21,7 @@
 #define TANK_ROTATION_SPEED 2.f // radians per second
 #define TANK_HIT_RADIUS 20.f
 #define ROCK_HIT_RADIUS 16.f
-#define MAX_BALLS 2048 
+#define MAX_BALLS 2048
 #define MAX_TANKS 2048
 #define TANK_COOLDOWN 0.5f
 #define MAX_BUTTONS 100
@@ -156,7 +155,9 @@ int main() {
   bool networkOk = socket.bind(PORT) == Socket::Status::Done;
   socket.setBlocking(false);
   optional<IpAddress> localIp = IpAddress::getLocalAddress();
-  unsigned int deviceId = localIp ? localIp->toInteger() : 1u; // service id!
+  unsigned int deviceId =
+      localIp ? localIp->toInteger() // service id!
+              : ((unsigned(rand()) << 16) | unsigned(rand()) | 1u); // random id
   // devices get named by the last number of their local ip
   string playerName = "Tank " + to_string(deviceId & 255u);
   unsigned char lobbyRole = 0; // 0: not in a lobby, 1: host, 2: client
@@ -172,6 +173,7 @@ int main() {
   unsigned char peerStatus[MAX_PEERS], peerCount[MAX_PEERS];
   float peerSeen[MAX_PEERS];
   int peers = 0;
+  unsigned int packetsRec = 0;   // amt of packets recieved
   bool touchActive[5] = {false}; // touch store
   Vector2i touchPos[5];
 
@@ -311,7 +313,8 @@ int main() {
   Texture logoT("assets/logo.png");
 
   for (int i = 0; i < 4; i++) {
-    if (bulletTexture[i].loadFromFile("assets/bullet" + to_string(i) + ".png")) {
+    if (bulletTexture[i].loadFromFile("assets/bullet" + to_string(i) +
+                                      ".png")) {
       bulletTexture[i].setSmooth(false);
     }
   }
@@ -796,8 +799,10 @@ int main() {
         std::uint8_t type = 0;
         std::uint32_t id = 0;
         pkt >> type >> id;
-        if (id == deviceId)
+        if (id == deviceId) {
           continue; // our own broadcast came back around
+          packetsRec++;
+        }
         unsigned int fromIp = from->toInteger();
 
         if (type == 1) { // somebody is broadcasting that they exist
@@ -2075,6 +2080,9 @@ int main() {
       infoText.setCharacterSize(20); // who we are
       infoText.setString("you are: " + playerName);
       infoText.setPosition({40.f, baseH - 60.f});
+      window.draw(infoText);
+      infoText.setString("packets recieved: " + to_string(packetsRec));
+      infoText.setPosition({40.f, baseH - 90.f});
       window.draw(infoText);
     }
     if (layer == 4) { // settings
