@@ -99,7 +99,7 @@ int main() {
   float mouseX = 0.f, mouseY = 0.f; // will be used a lot so declared here
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
-  float tankX[MAX_TANKS], tankY[MAX_TANKS], tankA[MAX_TANKS],
+  float tankX[MAX_TANKS], tankY[MAX_TANKS], tankLX[MAX_TANKS], tankLY[MAX_TANKS], tankA[MAX_TANKS],
       tankCooldown[MAX_TANKS],
       tankAmmoCooldown[MAX_TANKS]; // array of all tank X & Y positions, and
                                    // tank && tank angles (always use RADIAN)
@@ -652,7 +652,7 @@ int main() {
       for (int i = 0; i < tanks; i++) {
         isTankGreen[i] = i % 2 == 0; // even tanks are green, odd ones red
         tankSpawn[i] = true;
-        tankX[i] = tankY[i] = tankA[i] = 0.f;
+        tankX[i] = tankY[i] = tankLX[i] = tankLY[i] = tankA[i] = 0.f;
         tankAmmo[i] = 5; // initial ammo and
         tankCooldown[i] = 0.1f;
         tankAmmoCooldown[i] = 5.f;
@@ -801,8 +801,8 @@ int main() {
         pkt >> type >> id;
         if (id == deviceId) {
           continue; // our own broadcast came back around
-          packetsRec++;
         }
+        packetsRec++;
         unsigned int fromIp = from->toInteger();
 
         if (type == 1) { // somebody is broadcasting that they exist
@@ -906,8 +906,8 @@ int main() {
               // after a death we ignore its position until it has caught up
               // with the respawn
               if (deaths == tankDeaths[i]) {
-                tankX[i] = x;
-                tankY[i] = y;
+                tankX[i] = tankLX[i] = x;
+                tankY[i] = tankLY[i] = y;
                 tankA[i] = a;
               }
               unsigned char fresh =
