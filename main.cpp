@@ -99,8 +99,8 @@ int main() {
   float mouseX = 0.f, mouseY = 0.f; // will be used a lot so declared here
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
-  float tankX[MAX_TANKS], tankY[MAX_TANKS], tankLX[MAX_TANKS], tankLY[MAX_TANKS], tankA[MAX_TANKS],
-      tankCooldown[MAX_TANKS],
+  float tankX[MAX_TANKS], tankY[MAX_TANKS], tankLX[MAX_TANKS],
+      tankLY[MAX_TANKS], tankA[MAX_TANKS], tankCooldown[MAX_TANKS],
       tankAmmoCooldown[MAX_TANKS]; // array of all tank X & Y positions, and
                                    // tank && tank angles (always use RADIAN)
   unsigned short int tankAmmo[MAX_TANKS], tankKills[MAX_TANKS],
@@ -952,15 +952,16 @@ int main() {
                 hitIdx = (hitIdx + 1) % 2;
                 tankDeaths[i] = deaths;
                 if (i == myTank) { // we respawned, take the new spot
-                  tankX[i] = x;
-                  tankY[i] = y;
+                  tankX[i] = x;    // not tankLX or Y as our own tank's
+                  tankY[i] = y;    // -position won't be interpolated
                   tankA[i] = a;
                   tankV[i] = tankW[i] = 0.f;
                   tankLastX[i] = x;
                   tankLastY[i] = y;
                 }
               }
-              if (i != myTank) {
+              if (i != myTank) { // TODO: We are recieiving the position of
+                                 // other tanks
                 tankX[i] = x;
                 tankY[i] = y;
                 tankA[i] = a;
@@ -1040,7 +1041,8 @@ int main() {
             tanks--;
             i--;
           } else if (layer == 1 || layer == 6) {
-            tankX[i] = tankY[i] = -1000.f; // gone :fahh:
+            tankX[i] = tankY[i] = tankLX[i] = tankLY[i] =
+                -1000.f; // gone :fahh:
           }
         }
       }
@@ -1070,8 +1072,11 @@ int main() {
         // one ball normally, two or three fanned out with the power ups
         for (int s = 0; s < tankShots[i]; s++) {
           float a = tankA[i] + (s - (tankShots[i] - 1) / 2.f) * SHOT_SPREAD;
-          _qBallX[queueSize] = tankX[i] + sin(a) * 15.f;
-          _qBallY[queueSize] = tankY[i] - cos(a) * 15.f;
+          _qBallX[queueSize] =
+              tankX[i] + sin(a) * 15.f; // do not use display position
+          _qBallY[queueSize] =
+              tankY[i] - cos(a) * 15.f; // -as this is exec right after
+                                        // recieving new cannonballs
           _qBallVX[queueSize] = sin(a) * BALL_SPEED;
           _qBallVY[queueSize] = -cos(a) * BALL_SPEED;
           _qBallSource[queueSize] = i;
@@ -1202,6 +1207,7 @@ int main() {
       else
         tankW[myTank] = wantW;
       tankA[myTank] += tankW[myTank] * deltaTime;
+      // starting here no display position will be used
       tankX[myTank] += sin(tankA[myTank]) * tankV[myTank] * deltaTime;
       tankY[myTank] -= cos(tankA[myTank]) * tankV[myTank] * deltaTime;
       if (tankX[myTank] < TANK_HIT_RADIUS)
@@ -1239,6 +1245,7 @@ int main() {
           tankX[1] = width - TANK_HIT_RADIUS;
         if (tankY[1] > height - TANK_HIT_RADIUS)
           tankY[1] = height - TANK_HIT_RADIUS;
+        // ending here no display position will be used
       }
 
       // engine noise while one of our tanks is rolling
@@ -1252,7 +1259,7 @@ int main() {
       // tank-rock collision
       for (int i = 0; i <= upperTank; i++) {
         for (int r = 0; r < 10; r++) {
-          float dx = tankX[i] - rocks[r].x;
+          float dx = tankX[i] - rocks[r].x; // tank collisions
           float dy = tankY[i] - rocks[r].y;
           float d = dx * dx + dy * dy; // square distance
           float minD = TANK_HIT_RADIUS + ROCK_HIT_RADIUS;
@@ -1396,6 +1403,13 @@ int main() {
             }
             powerType[k] = 0; // picked up
           }
+
+          // at the end, tank position interpolation
+          // TODO
+          float t = 0.5f;
+          if (i != myTank) {
+            tankLX[i] = (1.f - t) * tankLX[i] + t * tankX[i];
+          }
         }
       }
 
@@ -1455,8 +1469,8 @@ int main() {
 
         // tankCollide
         for (int j = lowerTank; j <= upperTank; j++) {
-          if (isTankGreen[ballSource[i]] == isTankGreen[j])
-            continue; // no friendly fire
+          if ((isTankGreen[ballSource[i]] == isTankGreen[j]) && onlineMode)
+            continue; // no friendly fire in online mode
           float dx = ballsX[i] - tankX[j];
           float dy = ballsY[i] - tankY[j];
           float distSquared = (dx * dx) + (dy * dy);
@@ -1537,8 +1551,9 @@ int main() {
       // face the middle of the arena, forward is (sin a, -cos a)
       tankA[i] = atan2(width / 2.f - tankX[i], tankY[i] - height / 2.f);
       tankV[i] = tankW[i] = 0.f;
-      tankLastX[i] = tankX[i]; // so the jump doesn't draw a line of tracks
-      tankLastY[i] = tankY[i];
+      tankLastX[i] = tankLX[i] =
+          tankX[i]; // so the jump doesn't draw a line of tracks
+      tankLastY[i] = tankLY[i] = tankY[i];
     }
 
     // --- NETWORK: SENDING ---
@@ -1644,9 +1659,14 @@ int main() {
       }
       for (int i = lowerTank; i <= upperTank;
            i++) { // draw all green & red tanks
+        // no interpol of local tank position
+        if (i == myTank) {
+          tankLX[i] = tankX[i];
+          tankLY[i] = tankY[i];
+        }
         if (isTankGreen[i]) {
           // assign position and rotation from stored array to the sprites
-          greenTank.setPosition({tankX[i], tankY[i]});
+          greenTank.setPosition({tankLX[i], tankLY[i]});
           greenTank.setRotation(radians(tankA[i]));
           if (tankInv[i] > 0)
             greenTank.setColor(
@@ -1656,7 +1676,7 @@ int main() {
           // CircleShape c(TANK_HIT_RADIUS);
           // c.setOutlineColor(Color::White);
           // c.setOutlineThickness(1);
-          // c.setPosition({tankX[i], tankY[i]});
+          // c.setPosition({tankLX[i], tankLY[i]});
           // FloatRect cB = c.getLocalBounds();
           // c.setOrigin({cB.position.x + cB.size.x / 2.f,
           //              cB.position.y + cB.size.y / 2.f}); // draw circle by
@@ -1664,7 +1684,7 @@ int main() {
           // window.draw(c);
           window.draw(greenTank);
         } else {
-          redTank.setPosition({tankX[i], tankY[i]});
+          redTank.setPosition({tankLX[i], tankLY[i]});
           redTank.setRotation(radians(tankA[i]));
           if (tankInv[i] > 0)
             redTank.setColor(
@@ -1675,14 +1695,18 @@ int main() {
         }
         // shield bubble, flickers when it's about to run out
         if (tankShield[i] > 0.f && (tankShield[i] > 2.f || (t / 6) % 2)) {
-          shieldCircle.setPosition({tankX[i], tankY[i]});
+          shieldCircle.setPosition({tankLX[i], tankLY[i]});
           window.draw(shieldCircle);
         }
-        // draw the ammobars
-        ammoBar.setTexture(ammoT[tankAmmo[i] % 6]);
-        ammoBar.setPosition({tankX[i], tankY[i] + 40.f});
-        ammoBar.setColor(Color(255, 255, 255, tankCooldown[i] > 0 ? 123 : 255));
-        window.draw(ammoBar);
+        // draw the ammobar only for our tank
+        // TODO
+        if (i == myTank || !onlineMode) {
+          ammoBar.setTexture(ammoT[tankAmmo[i] % 6]);
+          ammoBar.setPosition({tankLX[i], tankLY[i] + 40.f});
+          ammoBar.setColor(
+              Color(255, 255, 255, tankCooldown[i] > 0 ? 123 : 255));
+          window.draw(ammoBar);
+        }
         // little icons above the tank for the power ups it has right now
         int iconSlot = 0;
         for (int p = 0; p < 3; p++) {
