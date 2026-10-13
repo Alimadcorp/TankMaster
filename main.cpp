@@ -490,8 +490,10 @@ int main() {
         mouseX = worldPos.x;
         mouseY = worldPos.y;
         mousePressed = mouseJustPressed = true;
-        if (layer == 7)
+        if (layer == 7) {
           introTime = 99.f; // click skip intro
+          mouseJustPressed = false;
+        }
       } else if (const auto *evnt =
                      event->getIf<Event::MouseButtonReleased>()) {
         mousePressed = false;
@@ -508,8 +510,10 @@ int main() {
         mouseX = worldPos.x;
         mouseY = worldPos.y;
         mousePressed = mouseJustPressed = true;
-        if (layer == 7)
+        if (layer == 7) {
           introTime = 99.f;
+          mouseJustPressed = false;
+        }
         if (layer == 1 && touchRects[5].contains(worldPos))
           layer = 6; // pause button
         else if (layer == 1 && touchRects[4].contains(worldPos) &&
