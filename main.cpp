@@ -725,14 +725,14 @@ int main() {
       if (networkOk && lobbyRole == 1) { // host going away tells everyone
         for (int i = 1; i < tanks; i++) {
           Packet p;
-          p << U8(9) << deviceId;
+          p << U8(42) << U8(9) << deviceId;
           if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
               Socket::Status::Done)
             ;
         }
       } else if (networkOk && lobbyRole == 2) {
         Packet p;
-        p << U8(9) << deviceId;
+        p << U8(42) << U8(9) << deviceId;
         if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
           ;
       }
@@ -750,10 +750,10 @@ int main() {
       sendStart = false; // the host tells every client the match begins
       for (int i = 1; i < tanks; i++) {
         Packet p;
-        p << U8(6) << deviceId << U8(tanks) << U8(i) << matchTime
+        p << U8(42) << U8(6) << deviceId << U8(tanks) << U8(i) << matchTime
           << std::uint32_t(width) << std::uint32_t(height);
         for (int k = 0; k < tanks; k++)
-          p << tankName[k];
+          p << U8(42) << tankName[k];
         for (int rep = 0; rep < 3;
              rep++) // stream more than once to avoic drops
           if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
@@ -795,7 +795,7 @@ int main() {
         // match or someone elses lobby
         if (lobbyRole == 1 || (lobbyRole == 0 && !inMatch)) {
           Packet p;
-          p << U8(1) << deviceId << playerName
+          p << U8(42) << U8(1) << deviceId << playerName
             << U8(lobbyRole == 1 ? (inMatch ? 2 : 1) : 0)
             << U8(lobbyRole == 1 ? tanks : 0);
           if (socket.send(p, IpAddress::Broadcast, PORT) ==
@@ -804,9 +804,9 @@ int main() {
         }
         if (lobbyRole == 1 && layer != 1 && layer != 6) { // lobby list
           Packet p;
-          p << U8(5) << deviceId << U8(tanks);
+          p << U8(42) << U8(5) << deviceId << U8(tanks);
           for (int i = 0; i < tanks; i++)
-            p << tankName[i];
+            p << U8(42) << tankName[i];
           for (int i = 1; i < tanks; i++)
             if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
                 Socket::Status::Done)
@@ -814,7 +814,7 @@ int main() {
         }
         if (lobbyRole == 2 && layer != 1 && layer != 6) { // heartbeat
           Packet p;
-          p << U8(4) << deviceId << playerName;
+          p << U8(42) << U8(4) << deviceId << playerName;
           if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
             ;
         }
@@ -893,7 +893,7 @@ int main() {
               tankName[idx] = name;
               tankSeen[idx] = 0.f;
               Packet p;
-              p << U8(3) << deviceId << playerName;
+              p << U8(42) << U8(3) << deviceId << playerName;
               if (socket.send(p, *from, PORT) == Socket::Status::Done)
                 ;
             }
@@ -1624,8 +1624,9 @@ int main() {
         // client: where our tank is, how many shots we fired and how many
         // times we died (so the host knows we saw the respawn)
         Packet p;
-        p << U8(7) << deviceId << U8(shotSeq) << U16(tankDeaths[myTank])
-          << tankX[myTank] << tankY[myTank] << tankA[myTank];
+        p << U8(42) << U8(7) << deviceId << U8(shotSeq)
+          << U16(tankDeaths[myTank]) << tankX[myTank] << tankY[myTank]
+          << tankA[myTank];
         if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
           ;
 
@@ -1641,29 +1642,32 @@ int main() {
         netTimer = 0.f;
       } else if (lobbyRole == 1 && inMatch) {
         // host: the whole match in one go
+        static unsigned char snapshotSeq = 0;
+        snapshotSeq++;
         Packet p;
-        p << U8(8) << deviceId << U8(layer == 2 ? 2 : 1) << timeLeft
-          << U16(greenKills) << U16(redKills) << U8(tanks);
+        p << U8(42) << U8(8) << deviceId << snapshotSeq
+          << U8(layer == 2 ? 2 : 1) << timeLeft << U16(greenKills)
+          << U16(redKills) << U8(tanks);
         for (int i = 0; i < tanks; i++)
-          p << tankX[i] << tankY[i] << tankA[i] << U8(tankAmmo[i])
+          p << U8(42) << tankX[i] << tankY[i] << tankA[i] << U8(tankAmmo[i])
             << U8(tankInv[i]) << tankShield[i] << tankBoost[i]
             << U8(tankShots[i]) << tankShotsTime[i] << U16(tankDeaths[i]);
         for (int k = 0; k < MAX_POWERUPS; k++)
-          p << U8(powerType[k]) << powerX[k] << powerY[k];
+          p << U8(42) << U8(powerType[k]) << powerX[k] << powerY[k];
         int nb = 0;
         for (int k = lowerBall; k <= upperBall && nb < MAX_NET_BALLS; k++)
           if (ballState[k])
             nb++;
-        p << U16(nb);
+        p << U8(42) << U16(nb);
         int sent = 0;
         for (int k = lowerBall; k <= upperBall && sent < nb; k++) {
           if (!ballState[k])
             continue;
-          p << I16(ballsX[k]) << I16(ballsY[k]);
+          p << U8(42) << I16(ballsX[k]) << I16(ballsY[k]);
           sent++;
         }
         for (int k = 0; k < MAX_GLARES; k++)
-          p << U8(glare[k] > 0 ? glare[k] : 0) << I16(glareX[k])
+          p << U8(42) << U8(glare[k] > 0 ? glare[k] : 0) << I16(glareX[k])
             << I16(glareY[k]);
         for (int i = 1; i < tanks; i++)
           if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
@@ -1990,7 +1994,7 @@ int main() {
               pendingId = inviteId;
               pendingTimer = 10.f;
               Packet p;
-              p << U8(4) << deviceId << playerName;
+              p << U8(42) << U8(4) << deviceId << playerName;
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
@@ -2005,7 +2009,8 @@ int main() {
               pendingTimer = 10.f;
 
               Packet p;
-              p << U8(4) << deviceId << playerName; // send join request to host
+              p << U8(42) << U8(4) << deviceId
+                << playerName; // send join request to host
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
@@ -2313,13 +2318,13 @@ int main() {
   if (networkOk && lobbyRole == 1) {
     for (int i = 1; i < tanks; i++) {
       Packet p;
-      p << U8(9) << deviceId;
+      p << U8(42) << U8(9) << deviceId;
       if (socket.send(p, IpAddress(tankIp[i]), PORT) == Socket::Status::Done)
         ;
     }
   } else if (networkOk && lobbyRole == 2) {
     Packet p;
-    p << U8(9) << deviceId;
+    p << U8(42) << U8(9) << deviceId;
     if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
       ;
   }
