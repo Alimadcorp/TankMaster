@@ -2109,10 +2109,17 @@ int main() {
               Packet pk;
               // idle device: invite it. device with an open lobby: ask to
               // join
-              if (peerStatus[p] == 0)
-                pk << U8(2) << deviceId << playerName << U8(lobbyRole == 1);
-              else
+              if (peerStatus[p] == 0) {
+                lobbyRole = 1;
+                isHost = true;
+                tanks = 1;
+                tankDevice[0] = deviceId;
+                tankName[0] = playerName;
+
+                pk << U8(2) << deviceId << playerName << U8(1);
+              } else {
                 pk << U8(4) << deviceId << playerName;
+              }
               if (socket.send(pk, IpAddress(peerIp[p]), PORT) ==
                   Socket::Status::Done)
                 ;
