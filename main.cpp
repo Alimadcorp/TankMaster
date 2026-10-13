@@ -162,6 +162,9 @@ int main() {
               : ((unsigned(rand()) << 16) | unsigned(rand()) | 1u); // random id
   // devices get named by the last number of their local ip
   string playerName = "Tank " + to_string(deviceId & 255u);
+  string playerName2 = playerName + " B";
+  unsigned char localTanks = 1;
+  bool typingName2 = false;
   unsigned char lobbyRole = 0; // 0: not in a lobby, 1: host, 2: client
   unsigned int hostAddr = 0, netW = width, netH = height, pendingId = 0;
   unsigned int inviteId = 0, inviteIp = 0;
@@ -284,7 +287,18 @@ int main() {
   buttonX[27] = width - 150;
   buttonX[28] = width - 70;
   buttonY[27] = buttonY[28] = height - 120;
-  buttons = 29;
+  buttonLayer[29] = 3;
+  buttonW[29] = 200;
+  buttonH[29] = 35;
+  buttonX[29] = 40;
+  buttonY[29] = height - 70;
+  buttonLayer[30] = 3;
+  buttonW[30] = 200;
+  buttonH[30] = 35;
+  buttonX[30] = 250;
+  buttonY[30] = height - 70;
+
+  buttons = 31;
 
   Vector2f rocks[10] = {{width / 2.f, height * 2.f / 3.f},
                         {width * 1.f / 4.f, height * 2.f / 5.f},
@@ -539,18 +553,24 @@ int main() {
         }
         // typing the player name
       } else if (const auto *evnt = event->getIf<Event::TextEntered>()) {
-        if ((layer == 4 || layer == 3) && typingName) {
+        if ((layer == 4 || layer == 3) && (typingName || typingName2)) {
           if (evnt->unicode == 8) { // backspace
-            if (!playerName.empty())
+            if (typingName && !playerName.empty())
               playerName.pop_back();
+            if (typingName2 && !playerName2.empty())
+              playerName2.pop_back();
           } else if (evnt->unicode == 13) { // enter
-            typingName = false;
-          } else if (evnt->unicode >= 32 && evnt->unicode < 127 &&
-                     playerName.size() < 12) {
-            playerName += static_cast<char>(evnt->unicode);
+            typingName = typingName2 = false;
+          } else if (evnt->unicode >= 32 && evnt->unicode < 127) {
+            if (typingName && playerName.size() < 12)
+              playerName += static_cast<char>(evnt->unicode);
+            if (typingName2 && playerName2.size() < 12)
+              playerName2 += static_cast<char>(evnt->unicode);
           }
           if (layer == 3 && lobbyRole != 0) {
             tankName[myTank] = playerName;
+            if (myTank + 1 < tanks && tankDevice[myTank + 1] == deviceId)
+              tankName[myTank + 1] = playerName2;
           }
         }
         // keyboard events
@@ -882,41 +902,45 @@ int main() {
             layer = 3;
           }
         } else if (type == 4) { // join request, also the lobby heartbeat
-          string name;
+          string name, name2;
+          std::uint8_t reqCount = 1;
           pkt >> name;
+          if (!(pkt >> reqCount >> name2))
+            reqCount = 1;
+
           if (lobbyRole == 1 && layer == 3) {
-            int idx = -1;
-            std::uint8_t reqCount =
-                1; // default to 1, expand if you send count in type 4
             int found = 0;
+            // update existing tanks for this client
             for (int i = 0; i < tanks; i++) {
               if (tankDevice[i] == id) {
+                tankName[i] = (found == 0) ? name : name2;
+                tankIp[i] = fromIp;
+                tankSeen[i] = 0.f;
                 found++;
-                idx = i; // updates existing
               }
             }
-            if (found < 2)
-              idx = -1; // force creation of the secondary local tank
-            if (idx < 0 && tanks < MAX_PLAYERS) {
-              idx = tanks++;
+            // provision missing tanks if requested
+            while (found < reqCount && tanks < MAX_PLAYERS) {
+              int idx = tanks++;
               tankDevice[idx] = id;
-            } else if (idx < 0) {
-              // reject packet if full
+              tankName[idx] = (found == 0) ? name : name2;
+              tankIp[idx] = fromIp;
+              tankSeen[idx] = 0.f;
+              found++;
+            }
+            if (found == 0) {
+              // reject if server is full
               Packet rej;
               rej << U8(42) << U8(9) << deviceId;
               if (socket.send(rej, *from, PORT) == Socket::Status::Done)
                 ;
               continue;
             }
-            if (idx >= 0) {
-              tankIp[idx] = fromIp;
-              tankName[idx] = name;
-              tankSeen[idx] = 0.f;
-              Packet p;
-              p << U8(42) << U8(3) << deviceId << playerName;
-              if (socket.send(p, *from, PORT) == Socket::Status::Done)
-                ;
-            }
+            // ack client
+            Packet p;
+            p << U8(42) << U8(3) << deviceId << playerName;
+            if (socket.send(p, *from, PORT) == Socket::Status::Done)
+              ;
           }
         } else if (type == 5) { // lobby list from the host
           if (lobbyRole == 2 && fromIp == hostAddr) {
@@ -1155,7 +1179,8 @@ int main() {
 
       // move balls from QUEUE to main array
       while (isHost && queueSize > 0) {
-        if (!ballState[nextBall]) { // keep looping until an empty slot is found
+        if (!ballState[nextBall]) { // keep looping until an empty slot is
+                                    // found
           queueSize--;
           glare[nextGlare] = 10;
           ballsX[nextBall] = glareX[nextGlare] = _qBallX[queueSize];
@@ -1580,8 +1605,8 @@ int main() {
                 ballsVY[i] = (dy / spd) * BALL_SPEED;
               }
               ballsA[i] = atan2(-ballsVY[i], -ballsVX[i]); // calculate angle
-              ballSource[i] = j; // the tank from which the bullet reflects now
-                                 // becomes the source
+              ballSource[i] = j; // the tank from which the bullet reflects
+                                 // now becomes the source
             } else {
               tankKills[ballSource[i]]++;
               if (isTankGreen[ballSource[i]])
@@ -1590,7 +1615,8 @@ int main() {
                 redKills++;
               tankDeaths[j]++;
               tankInv[j] = 149;
-              // leave a burnt mark, flash and make some noise where it blew up
+              // leave a burnt mark, flash and make some noise where it blew
+              // up
               scorchX[nextScorch] = tankX[j];
               scorchY[nextScorch] = tankY[j];
               scorchA[nextScorch] = (rand() % 628) / 100.f;
@@ -1662,7 +1688,8 @@ int main() {
         if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
           ;
 
-        // send state for secondary local tank if two players are on this device
+        // send state for secondary local tank if two players are on this
+        // device
         if (myTank + 1 < tanks && tankDevice[myTank + 1] == deviceId) {
           Packet p2;
           p2 << U8(42) << U8(7) << deviceId << U8(myTank + 1)
@@ -1916,8 +1943,12 @@ int main() {
       if (bi == 9 || bi == 10) // invites can show up in the menu too
         shown =
             (layer == 0 || layer == 3) && inviteTimer > 0.f && lobbyRole == 0;
-      if (bi >= 20)
+      if (bi >= 20 && bi <= 25)
         shown = layer == 3 && lobbyRole != 2 && networkOk && (bi - 20) < peers;
+      if (bi == 27 || bi == 28)
+        shown = layer == 3 && lobbyRole == 1; // +/- only for host
+      if (bi == 30)
+        shown = layer == 3 && localTanks > 1; // name 2 only if active
       if (bi == 1 && !networkOk)
         shown = false; // no multiplayer without a socket
       if (shown) {     // draw buttons that are on the current layer
@@ -2027,7 +2058,8 @@ int main() {
               pendingId = inviteId;
               pendingTimer = 10.f;
               Packet p;
-              p << U8(42) << U8(4) << deviceId << playerName;
+              p << U8(42) << U8(4) << deviceId << playerName << localTanks
+                << playerName2;
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
@@ -2042,8 +2074,8 @@ int main() {
               pendingTimer = 10.f;
 
               Packet p;
-              p << U8(42) << U8(4) << deviceId
-                << playerName; // send join request to host
+              p << U8(42) << U8(4) << deviceId << playerName << localTanks
+                << playerName2; // send join request to host
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
@@ -2123,6 +2155,24 @@ int main() {
                                (typingName && (t / 30) % 2 ? "_" : ""));
           if (clicked) {
             typingName = !typingName;
+            typingName2 = false;
+            mouseJustPressed = false;
+          }
+          break;
+        case 29:
+          buttonText.setString(localTanks == 1 ? "Add local player"
+                                               : "Remove local player");
+          if (clicked && lobbyRole != 2) { // clients cannot change tank counts
+            localTanks = localTanks == 1 ? 2 : 1;
+            mouseJustPressed = false;
+          }
+          break;
+        case 30:
+          buttonText.setString(playerName2 +
+                               (typingName2 && (t / 30) % 2 ? "_" : ""));
+          if (clicked) {
+            typingName2 = !typingName2;
+            typingName = false;
             mouseJustPressed = false;
           }
           break;
@@ -2158,14 +2208,18 @@ int main() {
                 if (lobbyRole == 0) {
                   lobbyRole = 1;
                   isHost = true;
-                  tanks = 1;
+                  tanks = localTanks;
                   tankDevice[0] = deviceId;
                   tankName[0] = playerName;
+                  if (localTanks > 1) { // create host's second tank immediately
+                    tankDevice[1] = deviceId;
+                    tankName[1] = playerName2;
+                  }
                 }
-
                 pk << U8(42) << U8(2) << deviceId << playerName << U8(1);
               } else {
-                pk << U8(42) << U8(4) << deviceId << playerName;
+                pk << U8(42) << U8(4) << deviceId << playerName << localTanks
+                   << playerName2;
               }
               if (socket.send(pk, IpAddress(peerIp[p]), PORT) ==
                   Socket::Status::Done)
