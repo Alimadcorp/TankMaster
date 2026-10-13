@@ -1,6 +1,7 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <SFML/Network/Socket.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -613,6 +614,8 @@ int main() {
     }
     // deltaTime calc
     float deltaTime = clock.restart().asSeconds();
+    if (deltaTime > 0.1f)
+      deltaTime = 0.1f; // clamp to prevent tunneling
     totalTime += deltaTime;
     frameCount++;
 
@@ -803,6 +806,7 @@ int main() {
             ;
         }
         if (lobbyRole == 1 && layer != 1 && layer != 6) { // lobby list
+          // allow host to have 2 tanks if offline or manually added
           Packet p;
           p << U8(42) << U8(5) << deviceId << U8(tanks);
           for (int i = 0; i < tanks; i++)
@@ -887,6 +891,13 @@ int main() {
             if (idx < 0 && tanks < MAX_PLAYERS) {
               idx = tanks++;
               tankDevice[idx] = id;
+            } else if (idx < 0) {
+              // reject packet if full
+              Packet rej;
+              rej << U8(42) << U8(9) << deviceId;
+              if (socket.send(rej, *from, PORT) == Socket::Status::Done)
+                ;
+              continue;
             }
             if (idx >= 0) {
               tankIp[idx] = fromIp;
@@ -959,10 +970,17 @@ int main() {
         } else if (type == 8) { // the host's picture of the whole match
           if (lobbyRole == 2 && fromIp == hostAddr && onlineMode &&
               (layer == 1 || layer == 2 || layer == 6)) {
-            std::uint8_t phase = 1, count = 0;
+            static unsigned char lastSnapshotSeq = 0;
+            std::uint8_t snapSeq = 0, phase = 1, count = 0;
             float tl = 0.f;
             std::uint16_t gk = 0, rk = 0;
-            pkt >> phase >> tl >> gk >> rk >> count;
+            if (!(pkt >> snapSeq >> phase >> tl >> gk >> rk >> count))
+              continue; // validate read
+            unsigned char diff =
+                static_cast<unsigned char>(snapSeq - lastSnapshotSeq);
+            if (diff == 0 || diff > 127)
+              continue; // drop stale snapshots
+            lastSnapshotSeq = snapSeq;
             hostSeen = 0.f;
             timeLeft = tl;
             greenKills = gk;
@@ -1046,7 +1064,7 @@ int main() {
               std::uint8_t g = 0;
               std::int16_t gx = 0, gy = 0;
               pkt >> g >> gx >> gy;
-              if (g > glare[k]) { // a fresh flash, show it too
+              if (g > 5 && g > glare[k]) { // a fresh flash, show it too
                 glare[k] = g;
                 glareX[k] = gx;
                 glareY[k] = gy;
@@ -1368,8 +1386,11 @@ int main() {
 
       // tank ammo and cooldowns
       for (int i = 0; i <= upperTank; i++) {
-        if (tankInv[i] > 0)
-          tankInv[i]--;
+        if (tankInv[i] > 0) {
+          tankInv[i] -= static_cast<unsigned short>(deltaTime * 60.f);
+          if (tankInv[i] > 60000)
+            tankInv[i] = 0; // underflow guard
+        }
         // power up timers run out here (the host's numbers win on clients)
         if (tankShield[i] > 0.f)
           tankShield[i] -= deltaTime;
