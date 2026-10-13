@@ -2161,9 +2161,9 @@ int main() {
                 tankDevice[0] = deviceId;
                 tankName[0] = playerName;
 
-                pk << U8(2) << deviceId << playerName << U8(1);
+                pk << U8(42) << U8(2) << deviceId << playerName << U8(1);
               } else {
-                pk << U8(4) << deviceId << playerName;
+                pk << U8(42) << U8(4) << deviceId << playerName;
               }
               if (socket.send(pk, IpAddress(peerIp[p]), PORT) ==
                   Socket::Status::Done)
