@@ -773,11 +773,19 @@ int main() {
     if (sendStart && networkOk) {
       sendStart = false; // the host tells every client the match begins
       for (int i = 1; i < tanks; i++) {
+        if (tankDevice[i] == deviceId)
+          continue;
+        bool alreadySent = false;
+        for (int j = 1; j < i; j++)
+          if (tankDevice[j] == tankDevice[i])
+            alreadySent = true;
+        if (alreadySent)
+          continue;
         Packet p;
         p << U8(42) << U8(6) << deviceId << U8(tanks) << U8(i) << matchTime
           << std::uint32_t(width) << std::uint32_t(height);
         for (int k = 0; k < tanks; k++)
-          p << U8(42) << tankName[k];
+          p << tankName[k];
         for (int rep = 0; rep < 3;
              rep++) // stream more than once to avoic drops
           if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
@@ -831,7 +839,7 @@ int main() {
           Packet p;
           p << U8(42) << U8(5) << deviceId << U8(tanks);
           for (int i = 0; i < tanks; i++)
-            p << U8(42) << tankName[i];
+            p << tankName[i];
           for (int i = 1; i < tanks; i++)
             if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
                 Socket::Status::Done)
@@ -905,15 +913,22 @@ int main() {
           string name, name2;
           std::uint8_t reqCount = 1;
           pkt >> name;
-          if (!(pkt >> reqCount >> name2))
+          if (!(pkt >> reqCount >> name2)) {
             reqCount = 1;
+            name2.clear();
+          }
+          if (reqCount < 1)
+            reqCount = 1;
+          if (reqCount > 2)
+            reqCount = 2;
 
           if (lobbyRole == 1 && layer == 3) {
             int found = 0;
             // update existing tanks for this client
             for (int i = 0; i < tanks; i++) {
               if (tankDevice[i] == id) {
-                tankName[i] = (found == 0) ? name : name2;
+                if (found == 0 || reqCount > 1)
+                  tankName[i] = (found == 0) ? name : name2;
                 tankIp[i] = fromIp;
                 tankSeen[i] = 0.f;
                 found++;
@@ -952,16 +967,28 @@ int main() {
             hostSeen = 0.f;
           }
         } else if (type == 6) { // the host started a match
-          if (lobbyRole == 2 && fromIp == hostAddr &&
-              (layer == 3 || layer == 2)) {
+          if (lobbyRole == 2 && fromIp == hostAddr && layer == 3) {
             std::uint8_t count = 0, mine = 0;
             float mt = CLOCK_TIME;
             std::uint32_t ww = width, hh = height;
-            pkt >> count >> mine >> mt >> ww >> hh;
-            tanks = count < MAX_PLAYERS ? count : MAX_PLAYERS;
-            myTank = mine < tanks ? mine : 0;
+            if (!(pkt >> count >> mine >> mt >> ww >> hh) || count == 0 ||
+                count > MAX_PLAYERS || mine >= count)
+              continue;
+            bool namesRead = true;
+            for (int i = 0; i < count; i++)
+              if (!(pkt >> tankName[i])) {
+                namesRead = false;
+                break;
+              }
+            if (!namesRead)
+              continue;
+            tanks = count;
+            myTank = mine;
             for (int i = 0; i < tanks; i++)
-              pkt >> tankName[i];
+              tankDevice[i] = 0;
+            tankDevice[myTank] = deviceId;
+            if (localTanks > 1 && myTank + 1 < tanks)
+              tankDevice[myTank + 1] = deviceId;
             netMatchTime = mt;
             netW = ww;
             netH = hh;
@@ -1711,25 +1738,25 @@ int main() {
           << U8(layer == 2 ? 2 : 1) << timeLeft << U16(greenKills)
           << U16(redKills) << U8(tanks);
         for (int i = 0; i < tanks; i++)
-          p << U8(42) << tankX[i] << tankY[i] << tankA[i] << U8(tankAmmo[i])
+          p << tankX[i] << tankY[i] << tankA[i] << U8(tankAmmo[i])
             << U8(tankInv[i]) << tankShield[i] << tankBoost[i]
             << U8(tankShots[i]) << tankShotsTime[i] << U16(tankDeaths[i]);
         for (int k = 0; k < MAX_POWERUPS; k++)
-          p << U8(42) << U8(powerType[k]) << powerX[k] << powerY[k];
+          p << U8(powerType[k]) << powerX[k] << powerY[k];
         int nb = 0;
-        for (int k = lowerBall; k <= upperBall && nb < MAX_NET_BALLS; k++)
+        for (int k = 0; k < ballPool && nb < MAX_NET_BALLS; k++)
           if (ballState[k])
             nb++;
-        p << U8(42) << U16(nb);
+        p << U16(nb);
         int sent = 0;
-        for (int k = lowerBall; k <= upperBall && sent < nb; k++) {
+        for (int k = 0; k < ballPool && sent < nb; k++) {
           if (!ballState[k])
             continue;
-          p << U8(42) << I16(ballsX[k]) << I16(ballsY[k]);
+          p << I16(ballsX[k]) << I16(ballsY[k]);
           sent++;
         }
         for (int k = 0; k < MAX_GLARES; k++)
-          p << U8(42) << U8(glare[k] > 0 ? glare[k] : 0) << I16(glareX[k])
+          p << U8(glare[k] > 0 ? glare[k] : 0) << I16(glareX[k])
             << I16(glareY[k]);
         for (int i = 1; i < tanks; i++)
           if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
