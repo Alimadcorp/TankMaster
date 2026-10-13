@@ -1157,23 +1157,25 @@ int main() {
           tankShoot[i]--;
           shootSnd[shootIdx].play();
           shootIdx = (shootIdx + 1) % 4;
+
           if (!isHost) {
             shotSeq[i]++;
-            continue;
+            continue; // clients count the shot for the network and stop here
           }
-        }
-        // one ball normally, two or three fanned out with the power ups
-        for (int s = 0; s < tankShots[i]; s++) {
-          float a = tankA[i] + (s - (tankShots[i] - 1) / 2.f) * SHOT_SPREAD;
-          _qBallX[queueSize] =
-              tankX[i] + sin(a) * 15.f; // do not use display position
-          _qBallY[queueSize] =
-              tankY[i] - cos(a) * 15.f; // -as this is exec right after
-                                        // recieving new cannonballs
-          _qBallVX[queueSize] = sin(a) * BALL_SPEED;
-          _qBallVY[queueSize] = -cos(a) * BALL_SPEED;
-          _qBallSource[queueSize] = i;
-          queueSize++;
+
+          // one ball normally, two or three fanned out with the power ups
+          for (int s = 0; s < tankShots[i]; s++) {
+            float a = tankA[i] + (s - (tankShots[i] - 1) / 2.f) * SHOT_SPREAD;
+            _qBallX[queueSize] =
+                tankX[i] + sin(a) * 15.f; // do not use display position
+            _qBallY[queueSize] =
+                tankY[i] - cos(a) * 15.f; // -as this is exec right after
+                                          // recieving new cannonballs
+            _qBallVX[queueSize] = sin(a) * BALL_SPEED;
+            _qBallVY[queueSize] = -cos(a) * BALL_SPEED;
+            _qBallSource[queueSize] = i;
+            queueSize++;
+          }
         }
       }
 
