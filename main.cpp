@@ -1942,309 +1942,308 @@ int main() {
                   Socket::Status::Done)
                 ;
             } else {
-              // whoever accepts becomes the server, the inviter is our first
-              // client
-              lobbyRole = 1;
-              isHost = true;
-              tanks = 2;
-              myTank = 0;
-              tankDevice[0] = deviceId;
-              tankName[0] = playerName;
-              tankDevice[1] = inviteId;
-              tankIp[1] = inviteIp;
-              tankName[1] = inviteName;
-              tankSeen[1] = 0.f;
+              // the person who sent the invite becomes the host.
+              // joining user connects as a client
+              lobbyRole = 2;
+              isHost = false;
+              hostAddr = inviteIp;
+              hostSeen = 0.f;
+              pendingId = inviteId;
+              pendingTimer = 10.f;
+
               Packet p;
-              p << U8(3) << deviceId << playerName;
+              p << U8(4) << deviceId
+                << playerName; // send join request to host
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
-            }
-            inviteTimer = 0.f;
-            layer = 3;
-            mouseJustPressed = false;
-          }
-          break;
-        case 10:
-          buttonText.setString("Decline");
-          if (clicked) {
-            inviteTimer = 0.f;
-            mouseJustPressed = false;
-          }
-          break;
-        case 11:
-        case 12:
-          buttonText.setString(bi == 11 ? "-" : "+");
-          if (clicked) {
-            matchTime += bi == 11 ? -10.f : 10.f;
-            if (matchTime < 10.f)
-              matchTime = 10.f;
-            if (matchTime > 600.f)
-              matchTime = 600.f;
-            mouseJustPressed = false;
-          }
-          break;
-        case 13:
-        case 14:
-          buttonText.setString(bi == 13 ? "-" : "+");
-          if (clicked) {
-            volume += bi == 13 ? -10.f : 10.f;
-            if (volume < 0.f)
-              volume = 0.f;
-            if (volume > 100.f)
-              volume = 100.f;
-            Listener::setGlobalVolume(volume);
-            mouseJustPressed = false;
-          }
-          break;
-        case 15:
-        case 17:
-          buttonText.setString("Back");
-          if (clicked) {
-            typingName = false;
-            layer = 0;
-            mouseJustPressed = false;
-          }
-          break;
-        case 16: // the name box, click it and type
-          buttonText.setString(playerName +
-                               (typingName && (t / 30) % 2 ? "_" : ""));
-          if (clicked) {
-            typingName = !typingName;
-            mouseJustPressed = false;
-          }
-          break;
-        case 18:
-          buttonText.setString("Resume");
-          if (clicked) {
-            layer = 1;
-            mouseJustPressed = false;
-          }
-          break;
-        case 19:
-          buttonText.setString("Main Menu");
-          if (clicked) {
-            layer = 0;
-            leaveNet = true;
-            mouseJustPressed = false;
-          }
-          break;
-        default: // 20 and up: devices found on the network
-          if (bi >= 20) {
-            int p = bi - 20;
-            buttonText.setString(
-                peerName[p] +
-                (peerStatus[p] == 0
-                     ? " - invite"
-                     : (peerStatus[p] == 1
-                            ? " - join (" + to_string(peerCount[p]) + ")"
-                            : " - in a match")));
-            if (clicked && peerStatus[p] != 2) {
-              pendingId = peerId[p];
-              pendingTimer = 10.f;
-              Packet pk;
-              // idle device: invite it. device with an open lobby: ask to join
-              if (peerStatus[p] == 0)
-                pk << U8(2) << deviceId << playerName << U8(lobbyRole == 1);
-              else
-                pk << U8(4) << deviceId << playerName;
-              if (socket.send(pk, IpAddress(peerIp[p]), PORT) ==
-                  Socket::Status::Done)
-                ;
+
+              inviteTimer = 0.f;
+              layer = 3;
               mouseJustPressed = false;
             }
+            break;
+          case 10:
+            buttonText.setString("Decline");
+            if (clicked) {
+              inviteTimer = 0.f;
+              mouseJustPressed = false;
+            }
+            break;
+          case 11:
+          case 12:
+            buttonText.setString(bi == 11 ? "-" : "+");
+            if (clicked) {
+              matchTime += bi == 11 ? -10.f : 10.f;
+              if (matchTime < 10.f)
+                matchTime = 10.f;
+              if (matchTime > 600.f)
+                matchTime = 600.f;
+              mouseJustPressed = false;
+            }
+            break;
+          case 13:
+          case 14:
+            buttonText.setString(bi == 13 ? "-" : "+");
+            if (clicked) {
+              volume += bi == 13 ? -10.f : 10.f;
+              if (volume < 0.f)
+                volume = 0.f;
+              if (volume > 100.f)
+                volume = 100.f;
+              Listener::setGlobalVolume(volume);
+              mouseJustPressed = false;
+            }
+            break;
+          case 15:
+          case 17:
+            buttonText.setString("Back");
+            if (clicked) {
+              typingName = false;
+              layer = 0;
+              mouseJustPressed = false;
+            }
+            break;
+          case 16: // the name box, click it and type
+            buttonText.setString(playerName +
+                                 (typingName && (t / 30) % 2 ? "_" : ""));
+            if (clicked) {
+              typingName = !typingName;
+              mouseJustPressed = false;
+            }
+            break;
+          case 18:
+            buttonText.setString("Resume");
+            if (clicked) {
+              layer = 1;
+              mouseJustPressed = false;
+            }
+            break;
+          case 19:
+            buttonText.setString("Main Menu");
+            if (clicked) {
+              layer = 0;
+              leaveNet = true;
+              mouseJustPressed = false;
+            }
+            break;
+          default: // 20 and up: devices found on the network
+            if (bi >= 20) {
+              int p = bi - 20;
+              buttonText.setString(
+                  peerName[p] +
+                  (peerStatus[p] == 0
+                       ? " - invite"
+                       : (peerStatus[p] == 1
+                              ? " - join (" + to_string(peerCount[p]) + ")"
+                              : " - in a match")));
+              if (clicked && peerStatus[p] != 2) {
+                pendingId = peerId[p];
+                pendingTimer = 10.f;
+                Packet pk;
+                // idle device: invite it. device with an open lobby: ask to
+                // join
+                if (peerStatus[p] == 0)
+                  pk << U8(2) << deviceId << playerName << U8(lobbyRole == 1);
+                else
+                  pk << U8(4) << deviceId << playerName;
+                if (socket.send(pk, IpAddress(peerIp[p]), PORT) ==
+                    Socket::Status::Done)
+                  ;
+                mouseJustPressed = false;
+              }
+            }
+            break;
           }
-          break;
+          meow FloatRect bounds =
+              buttonText.getLocalBounds(); // get size of rndered text
+          buttonText.setOrigin(
+              {bounds.position.x + bounds.size.x / 2.f,
+               bounds.position.y + bounds.size.y / 2.f}); // draw text by CENTER
+          buttonText.setPosition(
+              {static_cast<float>(buttonX[bi] + buttonW[bi] / 2.f),
+               static_cast<float>(buttonY[bi] +
+                                  buttonH[bi] / 2.f)}); // draw text on button
+          window.draw(button); // finally, draw the button then the text
+          window.draw(buttonText);
         }
-        meow FloatRect bounds =
-            buttonText.getLocalBounds(); // get size of rndered text
-        buttonText.setOrigin(
-            {bounds.position.x + bounds.size.x / 2.f,
-             bounds.position.y + bounds.size.y / 2.f}); // draw text by CENTER
-        buttonText.setPosition(
-            {static_cast<float>(buttonX[bi] + buttonW[bi] / 2.f),
-             static_cast<float>(buttonY[bi] +
-                                buttonH[bi] / 2.f)}); // draw text on button
-        window.draw(button); // finally, draw the button then the text
-        window.draw(buttonText);
       }
-    }
 
-    // --- MENU TEXTS ---
-    if (layer == 0 || layer == 3) { // an invite waiting for an answer
-      if (inviteTimer > 0.f && lobbyRole == 0) {
-        infoText.setCharacterSize(26);
-        infoText.setFillColor(Color::White);
-        infoText.setString(inviteName + (inviteHosting
-                                             ? " wants you to join their match"
-                                             : " invited you to play"));
-        FloatRect ib = infoText.getLocalBounds();
-        infoText.setOrigin(
-            {ib.position.x + ib.size.x / 2.f, ib.position.y + ib.size.y / 2.f});
-        infoText.setPosition({baseW / 2.f, 90.f});
-        window.draw(infoText);
-      }
-    }
-    if (layer == 0) {
-      titleText.setString("TankMaster");
-      FloatRect tb = titleText.getLocalBounds();
-      titleText.setOrigin(
-          {tb.position.x + tb.size.x / 2.f, tb.position.y + tb.size.y / 2.f});
-      titleText.setPosition({baseW / 2.f, baseH / 2.f - 130.f});
-      window.draw(titleText);
-    }
-    if (layer == 3) { // multiplayer menu
-      string head;
-      if (!networkOk)
-        head = "network is unavailable (is port 6767 already in use?)";
-      else if (lobbyRole == 1)
-        head = "you are hosting, invite someone or wait for them to join";
-      else if (lobbyRole == 2)
-        head = "joined! waiting for the host to start the match";
-      else if (pendingTimer > 0.f)
-        head = "waiting for an answer...";
-      else
-        head = peers > 0 ? "click a player to invite or join them"
-                         : "looking for players on your network...";
-      infoText.setCharacterSize(28);
-      infoText.setFillColor(Color::White);
-      infoText.setString(head);
-      FloatRect hb = infoText.getLocalBounds();
-      infoText.setOrigin(
-          {hb.position.x + hb.size.x / 2.f, hb.position.y + hb.size.y / 2.f});
-      infoText.setPosition({baseW / 2.f, 50.f});
-      window.draw(infoText);
-      infoText.setOrigin({0.f, 0.f}); // players in the lobby down the left
-      infoText.setCharacterSize(24);
-      if (lobbyRole != 0) {
-        for (int i = 0; i < tanks; i++) {
-          infoText.setString(to_string(i + 1) + ". " + tankName[i] +
-                             (i == 0 ? " (host)" : ""));
-          infoText.setPosition({40.f, 190.f + i * 36.f});
+      // --- MENU TEXTS ---
+      if (layer == 0 || layer == 3) { // an invite waiting for an answer
+        if (inviteTimer > 0.f && lobbyRole == 0) {
+          infoText.setCharacterSize(26);
+          infoText.setFillColor(Color::White);
+          infoText.setString(inviteName +
+                             (inviteHosting ? " wants you to join their match"
+                                            : " invited you to play"));
+          FloatRect ib = infoText.getLocalBounds();
+          infoText.setOrigin({ib.position.x + ib.size.x / 2.f,
+                              ib.position.y + ib.size.y / 2.f});
+          infoText.setPosition({baseW / 2.f, 90.f});
           window.draw(infoText);
         }
       }
-      infoText.setCharacterSize(20); // who we are
-      infoText.setString("you are: " + playerName);
-      infoText.setPosition({40.f, baseH - 60.f});
-      window.draw(infoText);
-      infoText.setString("packets recieved: " + to_string(packetsRec));
-      infoText.setPosition({40.f, baseH - 90.f});
-      window.draw(infoText);
-    }
-    if (layer == 4) { // settings
-      infoText.setCharacterSize(24);
-      infoText.setFillColor(Color::White);
-      string lines[3] = {"your name",
-                         "match time: " + to_string(int(matchTime)) + "s",
-                         "volume: " + to_string(int(volume))};
-      for (int i = 0; i < 3; i++) {
-        infoText.setString(lines[i]);
-        FloatRect lb = infoText.getLocalBounds();
-        infoText.setOrigin(
-            {lb.position.x + lb.size.x / 2.f, lb.position.y + lb.size.y / 2.f});
-        // the name label float above its box
-        infoText.setPosition(
-            {baseW / 2.f,
-             i == 0 ? sy - 25.f
-                    : sy + 70.f * i + 20.f}); // ts tweaking is so hard omg
-        window.draw(infoText);
+      if (layer == 0) {
+        titleText.setString("TankMaster");
+        FloatRect tb = titleText.getLocalBounds();
+        titleText.setOrigin(
+            {tb.position.x + tb.size.x / 2.f, tb.position.y + tb.size.y / 2.f});
+        titleText.setPosition({baseW / 2.f, baseH / 2.f - 130.f});
+        window.draw(titleText);
       }
-    }
-    if (layer == 5) { // credits
-      string credits[9] = {"TankMaster",
-                           "a 2d tank shooter game",
-                           "made with C++ and SFML, by",
-                           "",
-                           "Muhammad Ali",
-                           "Muhammad Hamza",
-                           "Amaz al Muqtadir",
-                           "",
-                           "Thanks for playing :3c"};
-      for (int i = 0; i < 9; i++) {
-        infoText.setCharacterSize(i == 0 ? 48 : 28);
+      if (layer == 3) { // multiplayer menu
+        string head;
+        if (!networkOk)
+          head = "network is unavailable (is port 6767 already in use?)";
+        else if (lobbyRole == 1)
+          head = "you are hosting, invite someone or wait for them to join";
+        else if (lobbyRole == 2)
+          head = "joined! waiting for the host to start the match";
+        else if (pendingTimer > 0.f)
+          head = "waiting for an answer...";
+        else
+          head = peers > 0 ? "click a player to invite or join them"
+                           : "looking for players on your network...";
+        infoText.setCharacterSize(28);
         infoText.setFillColor(Color::White);
-        infoText.setString(credits[i]);
-        FloatRect cb = infoText.getLocalBounds();
+        infoText.setString(head);
+        FloatRect hb = infoText.getLocalBounds();
         infoText.setOrigin(
-            {cb.position.x + cb.size.x / 2.f, cb.position.y + cb.size.y / 2.f});
-        infoText.setPosition({baseW / 2.f, 120.f + i * 50.f});
+            {hb.position.x + hb.size.x / 2.f, hb.position.y + hb.size.y / 2.f});
+        infoText.setPosition({baseW / 2.f, 50.f});
+        window.draw(infoText);
+        infoText.setOrigin({0.f, 0.f}); // players in the lobby down the left
+        infoText.setCharacterSize(24);
+        if (lobbyRole != 0) {
+          for (int i = 0; i < tanks; i++) {
+            infoText.setString(to_string(i + 1) + ". " + tankName[i] +
+                               (i == 0 ? " (host)" : ""));
+            infoText.setPosition({40.f, 190.f + i * 36.f});
+            window.draw(infoText);
+          }
+        }
+        infoText.setCharacterSize(20); // who we are
+        infoText.setString("you are: " + playerName);
+        infoText.setPosition({40.f, baseH - 60.f});
+        window.draw(infoText);
+        infoText.setString("packets recieved: " + to_string(packetsRec));
+        infoText.setPosition({40.f, baseH - 90.f});
         window.draw(infoText);
       }
-    }
-    if (layer == 7) { // intro: logo and title fade in, hold, fade out
-      float a = 1.f;
-      if (introTime < 1.f)
-        a = introTime;
-      else if (introTime > 2.5f)
-        a = 3.5f - introTime;
-      if (a < 0.f)
-        a = 0.f;
-      if (a > 1.f)
-        a = 1.f;
-      logoSprite.setColor(Color(255, 255, 255, int(a * 255.f)));
-      window.draw(logoSprite);
-      titleText.setString("Alimad Interactive Entertainment");
-      titleText.setFillColor(Color(255, 255, 255, int(a * 255.f)));
-      titleText.setOutlineColor(Color(0, 0, 0, int(a * 255.f)));
-      FloatRect tb = titleText.getLocalBounds();
-      titleText.setOrigin(
-          {tb.position.x + tb.size.x / 2.f, tb.position.y + tb.size.y / 2.f});
-      titleText.setPosition({baseW / 2.f, baseH / 2.f + baseH / 6.f + 30.f});
-      window.draw(titleText);
-      titleText.setFillColor(Color::White); // back to normal for the menus
-      titleText.setOutlineColor(Color::Black);
-    }
-    if (layer == 2) {
-      if (redKills > greenKills) {
-        redText.setCharacterSize(64);
-        redText.setString("Red won with " + to_string(redKills) + " kills!");
-        FloatRect w = redText.getLocalBounds();
-        redText.setOrigin({w.size.x / 2, w.size.y / 2});
-        redText.setPosition({baseW / 2.f, baseH * 1.f / 3.f});
-        window.draw(redText);
-      } else if (redKills < greenKills) {
-        greenText.setCharacterSize(64);
-        greenText.setString("Green won with " + to_string(greenKills) +
-                            " kills!");
-        FloatRect w = greenText.getLocalBounds();
-        greenText.setOrigin({w.size.x / 2, w.size.y / 2});
-        greenText.setPosition({baseW / 2.f, baseH * 1.f / 3.f});
-        window.draw(greenText);
-      } else {
-        timeText.setCharacterSize(64);
-        timeText.setString("Draw between both sides with " +
-                           to_string(redKills) + " kills!");
-        FloatRect w = timeText.getLocalBounds();
-        timeText.setOrigin({w.size.x / 2, w.size.y / 2});
-        timeText.setPosition({baseW / 2.f, baseH * 1.f / 3.f});
-        window.draw(timeText);
+      if (layer == 4) { // settings
+        infoText.setCharacterSize(24);
+        infoText.setFillColor(Color::White);
+        string lines[3] = {"your name",
+                           "match time: " + to_string(int(matchTime)) + "s",
+                           "volume: " + to_string(int(volume))};
+        for (int i = 0; i < 3; i++) {
+          infoText.setString(lines[i]);
+          FloatRect lb = infoText.getLocalBounds();
+          infoText.setOrigin({lb.position.x + lb.size.x / 2.f,
+                              lb.position.y + lb.size.y / 2.f});
+          // the name label float above its box
+          infoText.setPosition(
+              {baseW / 2.f,
+               i == 0 ? sy - 25.f
+                      : sy + 70.f * i + 20.f}); // ts tweaking is so hard omg
+          window.draw(infoText);
+        }
       }
+      if (layer == 5) { // credits
+        string credits[9] = {"TankMaster",
+                             "a 2d tank shooter game",
+                             "made with C++ and SFML, by",
+                             "",
+                             "Muhammad Ali",
+                             "Muhammad Hamza",
+                             "Amaz al Muqtadir",
+                             "",
+                             "Thanks for playing :3c"};
+        for (int i = 0; i < 9; i++) {
+          infoText.setCharacterSize(i == 0 ? 48 : 28);
+          infoText.setFillColor(Color::White);
+          infoText.setString(credits[i]);
+          FloatRect cb = infoText.getLocalBounds();
+          infoText.setOrigin({cb.position.x + cb.size.x / 2.f,
+                              cb.position.y + cb.size.y / 2.f});
+          infoText.setPosition({baseW / 2.f, 120.f + i * 50.f});
+          window.draw(infoText);
+        }
+      }
+      if (layer == 7) { // intro: logo and title fade in, hold, fade out
+        float a = 1.f;
+        if (introTime < 1.f)
+          a = introTime;
+        else if (introTime > 2.5f)
+          a = 3.5f - introTime;
+        if (a < 0.f)
+          a = 0.f;
+        if (a > 1.f)
+          a = 1.f;
+        logoSprite.setColor(Color(255, 255, 255, int(a * 255.f)));
+        window.draw(logoSprite);
+        titleText.setString("Alimad Interactive Entertainment");
+        titleText.setFillColor(Color(255, 255, 255, int(a * 255.f)));
+        titleText.setOutlineColor(Color(0, 0, 0, int(a * 255.f)));
+        FloatRect tb = titleText.getLocalBounds();
+        titleText.setOrigin(
+            {tb.position.x + tb.size.x / 2.f, tb.position.y + tb.size.y / 2.f});
+        titleText.setPosition({baseW / 2.f, baseH / 2.f + baseH / 6.f + 30.f});
+        window.draw(titleText);
+        titleText.setFillColor(Color::White); // back to normal for the menus
+        titleText.setOutlineColor(Color::Black);
+      }
+      if (layer == 2) {
+        if (redKills > greenKills) {
+          redText.setCharacterSize(64);
+          redText.setString("Red won with " + to_string(redKills) + " kills!");
+          FloatRect w = redText.getLocalBounds();
+          redText.setOrigin({w.size.x / 2, w.size.y / 2});
+          redText.setPosition({baseW / 2.f, baseH * 1.f / 3.f});
+          window.draw(redText);
+        } else if (redKills < greenKills) {
+          greenText.setCharacterSize(64);
+          greenText.setString("Green won with " + to_string(greenKills) +
+                              " kills!");
+          FloatRect w = greenText.getLocalBounds();
+          greenText.setOrigin({w.size.x / 2, w.size.y / 2});
+          greenText.setPosition({baseW / 2.f, baseH * 1.f / 3.f});
+          window.draw(greenText);
+        } else {
+          timeText.setCharacterSize(64);
+          timeText.setString("Draw between both sides with " +
+                             to_string(redKills) + " kills!");
+          FloatRect w = timeText.getLocalBounds();
+          timeText.setOrigin({w.size.x / 2, w.size.y / 2});
+          timeText.setPosition({baseW / 2.f, baseH * 1.f / 3.f});
+          window.draw(timeText);
+        }
+      }
+      window.display(); // push the draw buffer to the view
+      t++;              // tick a frame
     }
-    window.display(); // push the draw buffer to the view
-    t++;              // tick a frame
-  }
 
-  // in case of closed window broadcast leave msg
-  if (networkOk && lobbyRole == 1) {
-    for (int i = 1; i < tanks; i++) {
+    // in case of closed window broadcast leave msg
+    if (networkOk && lobbyRole == 1) {
+      for (int i = 1; i < tanks; i++) {
+        Packet p;
+        p << U8(9) << deviceId;
+        if (socket.send(p, IpAddress(tankIp[i]), PORT) == Socket::Status::Done)
+          ;
+      }
+    } else if (networkOk && lobbyRole == 2) {
       Packet p;
       p << U8(9) << deviceId;
-      if (socket.send(p, IpAddress(tankIp[i]), PORT) == Socket::Status::Done)
+      if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
         ;
     }
-  } else if (networkOk && lobbyRole == 2) {
-    Packet p;
-    p << U8(9) << deviceId;
-    if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
-      ;
+
+    meow purrrr
+        // :3c
+        return 0;
   }
 
-  meow purrrr
-      // :3c
-      return 0;
-}
-
-// end of file :P
-// thanks for reading the entire code P:
-// yes the meows and murrrps and purrrs were necessary
+  // end of file :P
+  // thanks for reading the entire code P:
+  // yes the meows and murrrps and purrrs were necessary
