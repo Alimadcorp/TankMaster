@@ -100,8 +100,8 @@ int main() {
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
   float tankX[MAX_TANKS], tankY[MAX_TANKS], tankLX[MAX_TANKS],
-      tankLY[MAX_TANKS], tankA[MAX_TANKS],
-      tankLA[MAX_TANKS], tankCooldown[MAX_TANKS],
+      tankLY[MAX_TANKS], tankA[MAX_TANKS], tankLA[MAX_TANKS],
+      tankCooldown[MAX_TANKS],
       tankAmmoCooldown[MAX_TANKS]; // array of all tank X & Y positions, and
                                    // tank && tank angles (always use RADIAN)
   unsigned short int tankAmmo[MAX_TANKS], tankKills[MAX_TANKS],
@@ -128,7 +128,7 @@ int main() {
   float tankShield[MAX_TANKS] = {0}, tankBoost[MAX_TANKS] = {0},
         tankShotsTime[MAX_TANKS] = {0};
   unsigned short int tankShots[MAX_TANKS] = {1};
-  bool tankShoot[MAX_TANKS] = {false}; // wants to shoot
+  char tankShoot[MAX_TANKS] = {0};     // wants to shoot
   bool tankSpawn[MAX_TANKS] = {false}; // wants to spawn
   float tankLastX[MAX_TANKS] = {0},
         tankLastY[MAX_TANKS] = {0};           // last tire mark
@@ -828,9 +828,10 @@ int main() {
         if (socket.receive(pkt, from, fromPort) != Socket::Status::Done ||
             !from)
           break;
-        std::uint8_t type = 0;
+        std::uint8_t magic = 0, type = 0;
         std::uint32_t id = 0;
-        pkt >> type >> id;
+        if (!(pkt >> magic >> type >> id) || magic != 42)
+          continue; // drop malformed or wrong game version
         if (id == deviceId) {
           continue; // our own broadcast came back around
         }
@@ -944,9 +945,9 @@ int main() {
               }
               unsigned char fresh =
                   static_cast<unsigned char>(seq - tankShotSeq[i]);
-              tankShotSeq[i] = seq;
-              if (fresh > 0 && fresh < 8) { // it shot since last packet
-                tankShoot[i] = true;
+              if (fresh > 0 && fresh < 128) {
+                tankShotSeq[i] = seq;
+                tankShoot[i] += fresh;
                 tankCooldown[i] = TANK_COOLDOWN;
                 if (tankAmmo[i] >= fresh)
                   tankAmmo[i] -= fresh;
@@ -1099,14 +1100,14 @@ int main() {
       // shoot requests become balls. the host makes them, clients only count
       // their shots and the host hears about it in the next packet
       for (int i = lowerTank; i <= upperTank; i++) {
-        if (!tankShoot[i])
-          continue;
-        tankShoot[i] = false;
-        shootSnd[shootIdx].play();
-        shootIdx = (shootIdx + 1) % 4;
-        if (!isHost) {
-          shotSeq++;
-          continue;
+        while (tankShoot[i] > 0) {
+          tankShoot[i]--;
+          shootSnd[shootIdx].play();
+          shootIdx = (shootIdx + 1) % 4;
+          if (!isHost) {
+            shotSeq++;
+            continue;
+          }
         }
         // one ball normally, two or three fanned out with the power ups
         for (int s = 0; s < tankShots[i]; s++) {
