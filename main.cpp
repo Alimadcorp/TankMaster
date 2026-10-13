@@ -715,7 +715,8 @@ int main() {
       for (int i = 0; i < MAX_POWERUPS; i++)
         powerType[i] = 0;
       powerTimer = 3.f;
-      shotSeq = 0;
+      for (int i = 0; i < MAX_TANKS; i++)
+        shotSeq[i] = 0;
       netTimer = 0.f;
       hostSeen = 0.f;
       mouseJustPressed = false;
