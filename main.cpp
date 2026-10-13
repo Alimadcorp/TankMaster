@@ -269,6 +269,20 @@ int main() {
     buttonX[b] = width / 2 - 180;
     buttonY[b] = 190 + (b - 20) * 46;
   }
+  // 26: lobby namebox, 27-28: match time buttons for host
+  buttonLayer[26] = 3;
+  buttonW[26] = 200;
+  buttonH[26] = 35;
+  buttonX[26] = 40;
+  buttonY[26] = height - 120;
+  buttonLayer[27] = 3;
+  buttonLayer[28] = 3;
+  buttonW[27] = buttonW[28] = 35;
+  buttonH[27] = buttonH[28] = 35;
+  buttonX[27] = width - 150;
+  buttonX[28] = width - 70;
+  buttonY[27] = buttonY[28] = height - 120;
+  buttons = 29;
 
   Vector2f rocks[10] = {{width / 2.f, height * 2.f / 3.f},
                         {width * 1.f / 4.f, height * 2.f / 5.f},
@@ -519,7 +533,7 @@ int main() {
         }
         // typing the player name
       } else if (const auto *evnt = event->getIf<Event::TextEntered>()) {
-        if (layer == 4 && typingName) {
+        if ((layer == 4 || layer == 3) && typingName) {
           if (evnt->unicode == 8) { // backspace
             if (!playerName.empty())
               playerName.pop_back();
@@ -528,6 +542,9 @@ int main() {
           } else if (evnt->unicode >= 32 && evnt->unicode < 127 &&
                      playerName.size() < 12) {
             playerName += static_cast<char>(evnt->unicode);
+          }
+          if (layer == 3 && lobbyRole != 0) {
+            tankName[myTank] = playerName;
           }
         }
         // keyboard events
@@ -556,14 +573,23 @@ int main() {
         Keyboard::Key k = evnt->code;
         // shooting only raises the tankShoot flag, the flag is turned into
         // actual balls (one, two or three) a bit further down
-        if (onlineMode) { // in onlineMode, only shoot from our tank
-          if (layer == 1 && (k == Keyboard::Key::W || k == Keyboard::Key::Up) &&
-              tankCooldown[myTank] <= 0.f && tankAmmo[myTank] > 0) {
+        if (onlineMode) {
+          if (layer == 1 && k == Keyboard::Key::W &&
+              tankCooldown[myTank] <= 0.f &&
+              tankAmmo[myTank] > 0) { // local green tank
             tankShoot[myTank] = true;
             tankCooldown[myTank] = TANK_COOLDOWN;
             tankAmmo[myTank]--;
+          } else if (layer == 1 && (myTank + 1 < tanks) &&
+                     tankDevice[myTank + 1] == deviceId &&
+                     k == Keyboard::Key::Up &&
+                     tankCooldown[myTank + 1] <= 0.f &&
+                     tankAmmo[myTank + 1] > 0) { // local red tank
+            tankShoot[myTank + 1] = true;
+            tankCooldown[myTank + 1] = TANK_COOLDOWN;
+            tankAmmo[myTank + 1]--;
           }
-        } else { // hi, this is a comment
+        } else {
           if (layer == 1 && k == Keyboard::Key::W &&
               tankCooldown[myTank] <= 0.f &&
               tankAmmo[myTank] >
@@ -1192,8 +1218,11 @@ int main() {
         velGreen = Vector2f(0.f, 0.f);
         velRed = Vector2f(0.f, 0.f);
       }
-      if (onlineMode)
-        velGreen += velRed;
+      if (onlineMode &&
+          (myTank + 1 >= tanks || tankDevice[myTank + 1] != deviceId)) {
+        velGreen +=
+            velRed; // control tank with either keys if local with 1 tank
+      }
 
       // the keys now say what speed we WANT, the tank ramps up (or down) to
       // it using the acceleration arrays tankV and tankW
@@ -1225,33 +1254,36 @@ int main() {
         meow meow meow purrrr tankX[myTank] = width - TANK_HIT_RADIUS;
       if (tankY[myTank] > height - TANK_HIT_RADIUS)
         tankY[myTank] = height - TANK_HIT_RADIUS;
-      if (!onlineMode) { // same thing for the red tank
-        float boostR = tankBoost[1] > 0.f ? BOOST_MULT : 1.f;
+
+      if (onlineMode && (myTank + 1 < tanks) &&
+          tankDevice[myTank + 1] == deviceId) {
+        unsigned short altTank = myTank + 1;
+        float boostR = tankBoost[altTank] > 0.f ? BOOST_MULT : 1.f;
         float wantVR = velRed.y * TANK_SPEED * boostR;
         float wantWR = velRed.x * TANK_ROTATION_SPEED;
-        if (tankV[1] < wantVR - stepV)
-          tankV[1] += stepV;
-        else if (tankV[1] > wantVR + stepV)
-          tankV[1] -= stepV;
+        if (tankV[altTank] < wantVR - stepV)
+          tankV[altTank] += stepV;
+        else if (tankV[altTank] > wantVR + stepV)
+          tankV[altTank] -= stepV;
         else
-          tankV[1] = wantVR;
-        if (tankW[1] < wantWR - stepW)
-          tankW[1] += stepW;
-        else if (tankW[1] > wantWR + stepW)
-          tankW[1] -= stepW;
+          tankV[altTank] = wantVR;
+        if (tankW[altTank] < wantWR - stepW)
+          tankW[altTank] += stepW;
+        else if (tankW[altTank] > wantWR + stepW)
+          tankW[altTank] -= stepW;
         else
-          tankW[1] = wantWR;
-        tankA[1] += tankW[1] * deltaTime;
-        tankX[1] += sin(tankA[1]) * tankV[1] * deltaTime;
-        tankY[1] -= cos(tankA[1]) * tankV[1] * deltaTime;
-        if (tankX[1] < TANK_HIT_RADIUS)
-          tankX[1] = TANK_HIT_RADIUS;
-        if (tankY[1] < TANK_HIT_RADIUS)
-          tankY[1] = TANK_HIT_RADIUS;
-        if (tankX[1] > width - TANK_HIT_RADIUS)
-          tankX[1] = width - TANK_HIT_RADIUS;
-        if (tankY[1] > height - TANK_HIT_RADIUS)
-          tankY[1] = height - TANK_HIT_RADIUS;
+          tankW[altTank] = wantWR;
+        tankA[altTank] += tankW[altTank] * deltaTime;
+        tankX[altTank] += sin(tankA[altTank]) * tankV[altTank] * deltaTime;
+        tankY[altTank] -= cos(tankA[altTank]) * tankV[altTank] * deltaTime;
+        if (tankX[altTank] < TANK_HIT_RADIUS)
+          tankX[altTank] = TANK_HIT_RADIUS;
+        if (tankY[altTank] < TANK_HIT_RADIUS)
+          tankY[altTank] = TANK_HIT_RADIUS;
+        if (tankX[altTank] > width - TANK_HIT_RADIUS)
+          tankX[altTank] = width - TANK_HIT_RADIUS;
+        if (tankY[altTank] > height - TANK_HIT_RADIUS)
+          tankY[altTank] = height - TANK_HIT_RADIUS;
         // ending here no display position will be used
       }
 
@@ -1582,6 +1614,16 @@ int main() {
           << tankX[myTank] << tankY[myTank] << tankA[myTank];
         if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
           ;
+
+        // send state for secondary local tank if two players are on this device
+        if (myTank + 1 < tanks && tankDevice[myTank + 1] == deviceId) {
+          Packet p2;
+          p2 << U8(7) << deviceId << U8(shotSeq) << U16(tankDeaths[myTank + 1])
+             << tankX[myTank + 1] << tankY[myTank + 1] << tankA[myTank + 1];
+          if (socket.send(p2, IpAddress(hostAddr), PORT) ==
+              Socket::Status::Done)
+            ;
+        }
         netTimer = 0.f;
       } else if (lobbyRole == 1 && inMatch) {
         // host: the whole match in one go
@@ -1952,8 +1994,7 @@ int main() {
               pendingTimer = 10.f;
 
               Packet p;
-              p << U8(4) << deviceId
-                << playerName; // send join request to host
+              p << U8(4) << deviceId << playerName; // send join request to host
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
@@ -2024,6 +2065,26 @@ int main() {
             if (clicked) {
               layer = 0;
               leaveNet = true;
+              mouseJustPressed = false;
+            }
+            break;
+          case 26:
+            buttonText.setString(playerName +
+                                 (typingName && (t / 30) % 2 ? "_" : ""));
+            if (clicked) {
+              typingName = !typingName;
+              mouseJustPressed = false;
+            }
+            break;
+          case 27:
+          case 28:
+            buttonText.setString(bi == 27 ? "-" : "+");
+            if (clicked && lobbyRole == 1) {
+              matchTime += bi == 27 ? -10.f : 10.f;
+              if (matchTime < 10.f)
+                matchTime = 10.f;
+              if (matchTime > 600.f)
+                matchTime = 600.f;
               mouseJustPressed = false;
             }
             break;
@@ -2130,6 +2191,11 @@ int main() {
         infoText.setString("packets recieved: " + to_string(packetsRec));
         infoText.setPosition({40.f, baseH - 90.f});
         window.draw(infoText);
+        if (lobbyRole == 1) {
+          infoText.setString("Time: " + to_string(int(matchTime)) + "s");
+          infoText.setPosition({float(width - 260), float(height - 115)});
+          window.draw(infoText);
+        }
       }
       if (layer == 4) { // settings
         infoText.setCharacterSize(24);
