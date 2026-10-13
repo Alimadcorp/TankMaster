@@ -1451,22 +1451,22 @@ int main() {
             }
             powerType[k] = 0; // picked up
           }
+        }
+      }
 
-          // at the end, tank position interpolation
-          for (int i = 0; i < tanks; i++) {
-            bool isLocal =
-                (i == myTank) || (onlineMode && tankDevice[i] == deviceId);
-            if (!isLocal) {
-              float lerpFactor = 12.f * deltaTime; // convergence factor
-              if (lerpFactor > 1.f)
-                lerpFactor = 1.f;
-              tankLX[i] += (tankX[i] - tankLX[i]) * lerpFactor;
-              tankLY[i] += (tankY[i] - tankLY[i]) * lerpFactor;
-            } else {
-              tankLX[i] = tankX[i];
-              tankLY[i] = tankY[i];
-            }
-          }
+      // tank position interpolation
+      for (int i = 0; i < tanks; i++) {
+        bool isLocal =
+            (i == myTank) || (onlineMode && tankDevice[i] == deviceId);
+        if (!isLocal) {
+          float lerpFactor = 12.f * deltaTime; // convergence factor
+          if (lerpFactor > 1.f)
+            lerpFactor = 1.f;
+          tankLX[i] += (tankX[i] - tankLX[i]) * lerpFactor;
+          tankLY[i] += (tankY[i] - tankLY[i]) * lerpFactor;
+        } else {
+          tankLX[i] = tankX[i];
+          tankLY[i] = tankY[i];
         }
       }
 
