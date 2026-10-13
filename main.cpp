@@ -46,7 +46,7 @@
 #define MAX_PLAYERS 8
 #define MAX_NET_BALLS 150
 #define NET_INTERVAL (1.f / 60.f)
-#define NET_TIMEOUT 5.f
+#define NET_TIMEOUT 12.f
 #define U8(x) static_cast<uint8_t>(x)
 #define U16(x) static_cast<uint16_t>(x)
 #define I16(x) static_cast<int16_t>(x)
@@ -862,7 +862,7 @@ int main() {
             inviteIp = fromIp;
             inviteName = name;
             inviteHosting = hosting != 0;
-            inviteTimer = 15.f;
+            inviteTimer = 20.f;
           }
         } else if (type == 3) { // our invite or join request got accepted
           if (lobbyRole == 0 && pendingTimer > 0.f && pendingId == id) {
@@ -1224,9 +1224,12 @@ int main() {
       }
       if (onlineMode &&
           (myTank + 1 >= tanks || tankDevice[myTank + 1] != deviceId)) {
+        // condition for checking whether two players are ^
+        // playing from this device
+
         velGreen +=
             velRed; // control tank with either keys if local with 1 tank
-      }
+      } // input ends here
 
       // the keys now say what speed we WANT, the tank ramps up (or down) to
       // it using the acceleration arrays tankV and tankW
@@ -1234,6 +1237,7 @@ int main() {
       float wantV = velGreen.y * TANK_SPEED * boostG;
       float wantW = velGreen.x * TANK_ROTATION_SPEED;
       float stepV = TANK_ACCEL * deltaTime, stepW = TANK_ROT_ACCEL * deltaTime;
+
       if (tankV[myTank] < wantV - stepV)
         tankV[myTank] += stepV;
       else if (tankV[myTank] > wantV + stepV)
@@ -1259,8 +1263,9 @@ int main() {
       if (tankY[myTank] > height - TANK_HIT_RADIUS)
         tankY[myTank] = height - TANK_HIT_RADIUS;
 
-      if (onlineMode && (myTank + 1 < tanks) &&
-          tankDevice[myTank + 1] == deviceId) {
+      if (!onlineMode ||
+          ((myTank + 1 < tanks) &&
+           tankDevice[myTank + 1] == deviceId)) { // uhhh // works
         unsigned short altTank = myTank + 1;
         float boostR = tankBoost[altTank] > 0.f ? BOOST_MULT : 1.f;
         float wantVR = velRed.y * TANK_SPEED * boostR;
