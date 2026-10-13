@@ -45,7 +45,7 @@
 #define MAX_PEERS 6
 #define MAX_PLAYERS 8
 #define MAX_NET_BALLS 150
-#define NET_INTERVAL (1.f / 8.f)
+#define NET_INTERVAL (1.f / 60.f)
 #define NET_TIMEOUT 6.f
 #define U8(x) static_cast<uint8_t>(x)
 #define U16(x) static_cast<uint16_t>(x)
