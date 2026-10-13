@@ -2155,11 +2155,13 @@ int main() {
               // idle device: invite it. device with an open lobby: ask to
               // join
               if (peerStatus[p] == 0) {
-                lobbyRole = 1;
-                isHost = true;
-                tanks = 1;
-                tankDevice[0] = deviceId;
-                tankName[0] = playerName;
+                if (lobbyRole == 0) {
+                  lobbyRole = 1;
+                  isHost = true;
+                  tanks = 1;
+                  tankDevice[0] = deviceId;
+                  tankName[0] = playerName;
+                }
 
                 pk << U8(42) << U8(2) << deviceId << playerName << U8(1);
               } else {
