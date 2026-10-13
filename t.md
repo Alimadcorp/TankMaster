@@ -251,43 +251,6 @@ Add interactive buttons on `layer 3` (Multiplayer Menu) for name editing and mat
 
 ---
 
-### Step 2: Proper Network Interpolation
-
-Smooth out enemy tank movements by applying linear interpolation ($\text{LERP}$) on `tankLX` and `tankLY` toward the authoritative target position `tankX` and `tankY`.
-
-**Find in `main.cpp` (Host power-up loop section where LERP comment is located):**
-
-```cpp
-          // at the end, tank position interpolation
-          // TODO
-          float t = 0.5f;
-          if (i != myTank) {
-            tankLX[i] = (1.f - t) * tankLX[i] + t * tankX[i];
-          }
-
-```
-
-**Replace with:**
-
-```cpp
-      // Linear Interpolation (LERP) for remote tank positions
-      for (int i = 0; i < tanks; i++) {
-        bool isLocal = (i == myTank) || (onlineMode && tankDevice[i] == deviceId);
-        if (!isLocal) {
-          float lerpFactor = 12.f * deltaTime; // Smooth convergence factor
-          if (lerpFactor > 1.f) lerpFactor = 1.f;
-          tankLX[i] += (tankX[i] - tankLX[i]) * lerpFactor;
-          tankLY[i] += (tankY[i] - tankLY[i]) * lerpFactor;
-        } else {
-          tankLX[i] = tankX[i];
-          tankLY[i] = tankY[i];
-        }
-      }
-
-```
-
----
-
 ### Step 3: Fix Bullet Desynchronization Between Server and Client
 
 Ensure bullet counts and positions remain strictly synchronized by clearing existing client balls before replacing them with snapshot packets from the host.

@@ -989,14 +989,21 @@ int main() {
             pkt >> nb;
             if (nb > MAX_NET_BALLS)
               nb = MAX_NET_BALLS;
+            for (int k = 0; k < ballPool; k++) {
+              ballState[k] = 0; // reset all balls
+            }
             for (int k = 0; k < nb; k++) {
               std::int16_t bx = 0, by = 0;
               pkt >> bx >> by;
-              ballsX[k] = bx;
-              ballsY[k] = by;
+              ballsX[k] = static_cast<float>(bx);
+              ballsY[k] = static_cast<float>(by);
               ballsA[k] = 0.f;
               ballState[k] = 1;
             }
+            lowerBall = 0;
+            upperBall = nb > 0 ? nb - 1 : 0;
+            balls = nb;
+            nextBall = nb % ballPool;
             for (int k = nb; k <= upperBall; k++)
               ballState[k] = 0; // balls that are gone since the last snapshot
             lowerBall = 0;
@@ -1405,10 +1412,19 @@ int main() {
           }
 
           // at the end, tank position interpolation
-          // TODO
-          float t = 0.5f;
-          if (i != myTank) {
-            tankLX[i] = (1.f - t) * tankLX[i] + t * tankX[i];
+          for (int i = 0; i < tanks; i++) {
+            bool isLocal =
+                (i == myTank) || (onlineMode && tankDevice[i] == deviceId);
+            if (!isLocal) {
+              float lerpFactor = 12.f * deltaTime; // convergence factor
+              if (lerpFactor > 1.f)
+                lerpFactor = 1.f;
+              tankLX[i] += (tankX[i] - tankLX[i]) * lerpFactor;
+              tankLY[i] += (tankY[i] - tankLY[i]) * lerpFactor;
+            } else {
+              tankLX[i] = tankX[i];
+              tankLY[i] = tankY[i];
+            }
           }
         }
       }
@@ -1655,7 +1671,9 @@ int main() {
         // cannonball.setTexture(bulletTexture[(t / 10 + i) % 4]);
         cannonball.setPosition({ballsX[i], ballsY[i]});
         cannonball.setRotation(radians(ballsA[i]));
-        cannonball.setFillColor(isTankGreen[ballSource[i]] ? Color(10, 150, 10) : Color(150, 10, 10));
+        cannonball.setFillColor(isTankGreen[ballSource[i]]
+                                    ? Color(10, 150, 10)
+                                    : Color(150, 10, 10));
         window.draw(cannonball);
       }
       for (int i = lowerTank; i <= upperTank;
