@@ -169,7 +169,7 @@ int main() {
   bool inviteHosting = false;
   float netTimer = 0.f, discoverTimer = 0.f, hostSeen = 0.f, inviteTimer = 0.f,
         pendingTimer = 0.f, netMatchTime = CLOCK_TIME;
-  unsigned char shotSeq = 0;
+  unsigned char shotSeq[MAX_TANKS] = {0};
   unsigned int peerId[MAX_PEERS], peerIp[MAX_PEERS];
   string peerName[MAX_PEERS];
   unsigned char peerStatus[MAX_PEERS], peerCount[MAX_PEERS];
@@ -885,9 +885,17 @@ int main() {
           pkt >> name;
           if (lobbyRole == 1 && layer == 3) {
             int idx = -1;
-            for (int i = 0; i < tanks; i++) // only one tank per device id
-              if (tankDevice[i] == id)
-                idx = i;
+            std::uint8_t reqCount =
+                1; // default to 1, expand if you send count in type 4
+            int found = 0;
+            for (int i = 0; i < tanks; i++) {
+              if (tankDevice[i] == id) {
+                found++;
+                idx = i; // updates existing
+              }
+            }
+            if (found < 2)
+              idx = -1; // force creation of the secondary local tank
             if (idx < 0 && tanks < MAX_PLAYERS) {
               idx = tanks++;
               tankDevice[idx] = id;
@@ -939,12 +947,14 @@ int main() {
           }
         } else if (type == 7) { // a client tells us where its tank is
           if (lobbyRole == 1 && (layer == 1 || layer == 6)) {
-            std::uint8_t seq = 0;
+            std::uint8_t tIdx = 0, seq = 0;
             std::uint16_t deaths = 0;
             float x = 0.f, y = 0.f, a = 0.f;
-            pkt >> seq >> deaths >> x >> y >> a;
+            if (!(pkt >> tIdx >> seq >> deaths >> x >> y >> a))
+              continue;
             for (int i = 1; i < tanks; i++) {
-              if (tankDevice[i] != id)
+              if (tankDevice[i] != id ||
+                  i != tIdx) // ensure we apply it to the exact tank
                 continue;
               tankSeen[i] = 0.f;
               // after a death we ignore its position until it has caught up
@@ -1123,7 +1133,7 @@ int main() {
           shootSnd[shootIdx].play();
           shootIdx = (shootIdx + 1) % 4;
           if (!isHost) {
-            shotSeq++;
+            shotSeq[i]++;
             continue;
           }
         }
@@ -1645,7 +1655,7 @@ int main() {
         // client: where our tank is, how many shots we fired and how many
         // times we died (so the host knows we saw the respawn)
         Packet p;
-        p << U8(42) << U8(7) << deviceId << U8(shotSeq)
+        p << U8(42) << U8(7) << deviceId << U8(myTank) << U8(shotSeq[myTank])
           << U16(tankDeaths[myTank]) << tankX[myTank] << tankY[myTank]
           << tankA[myTank];
         if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
@@ -1654,7 +1664,8 @@ int main() {
         // send state for secondary local tank if two players are on this device
         if (myTank + 1 < tanks && tankDevice[myTank + 1] == deviceId) {
           Packet p2;
-          p2 << U8(7) << deviceId << U8(shotSeq) << U16(tankDeaths[myTank + 1])
+          p2 << U8(42) << U8(7) << deviceId << U8(myTank + 1)
+             << U8(shotSeq[myTank + 1]) << U16(tankDeaths[myTank + 1])
              << tankX[myTank + 1] << tankY[myTank + 1] << tankA[myTank + 1];
           if (socket.send(p2, IpAddress(hostAddr), PORT) ==
               Socket::Status::Done)
