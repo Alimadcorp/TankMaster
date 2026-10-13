@@ -1004,13 +1004,22 @@ int main() {
             float x = 0.f, y = 0.f, a = 0.f;
             if (!(pkt >> tIdx >> seq >> deaths >> x >> y >> a))
               continue;
-            for (int i = 1; i < tanks; i++) {
-              if (tankDevice[i] != id ||
-                  i != tIdx) // ensure we apply it to the exact tank
-                continue;
+            int target = -1;
+            if (tIdx > 0 && tIdx < tanks &&
+                (tankDevice[tIdx] == id || tankDevice[tIdx] == 0)) {
+              target = tIdx;
+              tankDevice[target] = id;
+              tankIp[target] = fromIp;
+            }
+            if (target < 0)
+              for (int i = 1; i < tanks; i++)
+                if (tankDevice[i] == id) {
+                  target = i;
+                  break;
+                }
+            if (target >= 1) {
+              int i = target;
               tankSeen[i] = 0.f;
-              // after a death we ignore its position until it has caught up
-              // with the respawn
               if (deaths == tankDeaths[i]) {
                 tankX[i] = x;
                 tankY[i] = y;
@@ -2191,8 +2200,18 @@ int main() {
         case 29:
           buttonText.setString(localTanks == 1 ? "Add local player"
                                                : "Remove local player");
-          if (clicked && lobbyRole != 2) { // clients cannot change tank counts
+          if (clicked && lobbyRole != 2 &&
+              (lobbyRole == 0 || tanks == localTanks)) {
             localTanks = localTanks == 1 ? 2 : 1;
+            if (lobbyRole == 1) {
+              tanks = localTanks;
+              tankDevice[0] = deviceId;
+              tankName[0] = playerName;
+              if (localTanks > 1) {
+                tankDevice[1] = deviceId;
+                tankName[1] = playerName2;
+              }
+            }
             mouseJustPressed = false;
           }
           break;
