@@ -45,8 +45,8 @@
 #define MAX_PEERS 6
 #define MAX_PLAYERS 8
 #define MAX_NET_BALLS 150
-#define NET_INTERVAL (1.f / 60.f)
-#define NET_TIMEOUT 12.f
+#define NET_INTERVAL (1.f / 8.f)
+#define NET_TIMEOUT 6.f
 #define U8(x) static_cast<uint8_t>(x)
 #define U16(x) static_cast<uint16_t>(x)
 #define I16(x) static_cast<int16_t>(x)
@@ -100,7 +100,8 @@ int main() {
   unsigned long long int t = 0;     // tick
   int frameCount = 0;
   float tankX[MAX_TANKS], tankY[MAX_TANKS], tankLX[MAX_TANKS],
-      tankLY[MAX_TANKS], tankA[MAX_TANKS], tankCooldown[MAX_TANKS],
+      tankLY[MAX_TANKS], tankA[MAX_TANKS],
+      tankLA[MAX_TANKS], tankCooldown[MAX_TANKS],
       tankAmmoCooldown[MAX_TANKS]; // array of all tank X & Y positions, and
                                    // tank && tank angles (always use RADIAN)
   unsigned short int tankAmmo[MAX_TANKS], tankKills[MAX_TANKS],
@@ -682,7 +683,8 @@ int main() {
       for (int i = 0; i < tanks; i++) {
         isTankGreen[i] = i % 2 == 0; // even tanks are green, odd ones red
         tankSpawn[i] = true;
-        tankX[i] = tankY[i] = tankLX[i] = tankLY[i] = tankA[i] = 0.f;
+        tankX[i] = tankY[i] = tankLX[i] = tankLY[i] = tankA[i] = tankLA[i] =
+            0.f;
         tankAmmo[i] = 5; // initial ammo and
         tankCooldown[i] = 0.1f;
         tankAmmoCooldown[i] = 5.f;
@@ -936,8 +938,8 @@ int main() {
               // after a death we ignore its position until it has caught up
               // with the respawn
               if (deaths == tankDeaths[i]) {
-                tankX[i] = tankLX[i] = x;
-                tankY[i] = tankLY[i] = y;
+                tankX[i] = x;
+                tankY[i] = y;
                 tankA[i] = a;
               }
               unsigned char fresh =
@@ -1349,9 +1351,9 @@ int main() {
         if (tankX[i] < 0.f)
           continue; // a tank that left the match doesn't leave marks
         for (int side = -1; side <= 1; side += 2) {
-          trackX[nextTrack] = tankX[i] + cos(tankA[i]) * 13.f * side;
-          trackY[nextTrack] = tankY[i] + sin(tankA[i]) * 13.f * side;
-          trackA[nextTrack] = tankA[i];
+          trackX[nextTrack] = tankLX[i] + cos(tankA[i]) * 13.f * side;
+          trackY[nextTrack] = tankLY[i] + sin(tankA[i]) * 13.f * side;
+          trackA[nextTrack] = tankLA[i];
           trackLife[nextTrack] = TRACK_LIFE;
           nextTrack = (nextTrack + 1) % MAX_TRACKS;
         }
@@ -1464,9 +1466,11 @@ int main() {
             lerpFactor = 1.f;
           tankLX[i] += (tankX[i] - tankLX[i]) * lerpFactor;
           tankLY[i] += (tankY[i] - tankLY[i]) * lerpFactor;
+          tankLA[i] += (tankA[i] - tankLA[i]) * lerpFactor;
         } else {
           tankLX[i] = tankX[i];
           tankLY[i] = tankY[i];
+          tankLA[i] = tankA[i];
         }
       }
 
@@ -1730,18 +1734,15 @@ int main() {
       for (int i = lowerTank; i <= upperTank;
            i++) { // draw all green & red tanks
         // no interpol of local tank position
-        if (i == myTank) {
+        if (i == myTank || !onlineMode) {
           tankLX[i] = tankX[i];
           tankLY[i] = tankY[i];
-        }
-        if (!onlineMode) {
-          tankLX[1] = tankX[1];
-          tankLY[1] = tankY[1];
+          tankLA[i] = tankA[i];
         }
         if (isTankGreen[i]) {
           // assign position and rotation from stored array to the sprites
           greenTank.setPosition({tankLX[i], tankLY[i]});
-          greenTank.setRotation(radians(tankA[i]));
+          greenTank.setRotation(radians(tankLA[i]));
           if (tankInv[i] > 0)
             greenTank.setColor(
                 Color(255, 255, 255, (tankInv[i] / 10) % 2 ? 255 : 130));
@@ -1759,7 +1760,7 @@ int main() {
           window.draw(greenTank);
         } else {
           redTank.setPosition({tankLX[i], tankLY[i]});
-          redTank.setRotation(radians(tankA[i]));
+          redTank.setRotation(radians(tankLA[i]));
           if (tankInv[i] > 0)
             redTank.setColor(
                 Color(255, 255, 255, (tankInv[i] / 10) % 2 ? 255 : 130));
@@ -1793,7 +1794,7 @@ int main() {
           powerSprite.setTextureRect(IntRect({0, icon * 16}, {16, 16}));
           powerSprite.setScale({1.4f, 1.4f});
           powerSprite.setPosition(
-              {tankX[i] - 22.f + iconSlot * 22.f, tankY[i] - 44.f});
+              {tankLX[i] - 22.f + iconSlot * 22.f, tankLY[i] - 44.f});
           window.draw(powerSprite);
           iconSlot++;
         }
@@ -1804,7 +1805,7 @@ int main() {
           FloatRect nb = infoText.getLocalBounds();
           infoText.setOrigin(
               {nb.position.x + nb.size.x / 2.f, nb.position.y + nb.size.y});
-          infoText.setPosition({tankX[i], tankY[i] - 50.f});
+          infoText.setPosition({tankLX[i], tankLY[i] - 50.f});
           window.draw(infoText);
         }
       }
