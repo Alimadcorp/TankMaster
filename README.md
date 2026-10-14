@@ -45,7 +45,7 @@ A tank can shoot a cannonball from it's ammo, which has a size of 5, and refills
 - Learn to use all SFML modules, from window to graphics and sound to network.
 
 **Features and Functionalities**:
-- Players can make moves by using WASD or Arrow keys, in case of network multiplayer, both map to their tank, but in case of offline, WASD controls the green tank, arrow keys control the red tank.
+- Players can make moves by using WASD or Arrow keys, in case of network multiplayer, both map to their tank, unless two ppl are playing from one device (new feature, reduces the amt of devices needed), but in case of offline, WASD controls the green tank, arrow keys control the red tank.
 - Realtime collision detection, optimization of collision detection, management of large arrays of positions and velocities of objects, and rendering of those objects in the right order.
 - Data serialization and local network multiplayer using a self-made protocol that runs on port 6767. This protocol follows the decentralized peer-to-peer architecture, where initially, every device is broadcasting and listening for other devices, as soon as a device invites another to a match, the one that accepts would become the server. The other device would stop broadcasting, though, any other devices than these two on the network can be invited by the server, or can request the server to join the match, upon joining which, the devices become clients too.
 - Win conditions and winning message, main menu screen, settings screen.

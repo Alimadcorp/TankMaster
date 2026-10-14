@@ -120,7 +120,8 @@ int main() {
   short int buttonX[MAX_BUTTONS], buttonY[MAX_BUTTONS], buttonW[MAX_BUTTONS],
       buttonH[MAX_BUTTONS], buttons = 1;
   short int buttonLayer[MAX_BUTTONS] = {-1};
-  short int glare[MAX_GLARES] = {0}, glareX[MAX_GLARES], glareY[MAX_GLARES];
+  short int glare[MAX_GLARES] = {0}, glareX[MAX_GLARES] = {0},
+            glareY[MAX_GLARES] = {0};
   short int glares = 0, nextGlare = 0;
   unsigned int greenKills = 0, redKills = 0;
   float timeLeft = CLOCK_TIME;
@@ -142,7 +143,7 @@ int main() {
   float scorchX[MAX_SCORCH], scorchY[MAX_SCORCH], scorchA[MAX_SCORCH],
       scorchLife[MAX_SCORCH] = {0};
   int nextTrack = 0, nextScorch = 0;
-  float powerX[MAX_POWERUPS], powerY[MAX_POWERUPS];
+  float powerX[MAX_POWERUPS] = {0}, powerY[MAX_POWERUPS] = {0};
   short int powerType[MAX_POWERUPS] = {0}; // 0 none, 1 shield, 2 boost, 3 two
                                            // shots, 4 three shots
   float powerTimer = 3.f;
@@ -173,6 +174,10 @@ int main() {
   float netTimer = 0.f, discoverTimer = 0.f, hostSeen = 0.f, inviteTimer = 0.f,
         pendingTimer = 0.f, netMatchTime = CLOCK_TIME;
   unsigned char shotSeq[MAX_TANKS] = {0};
+  bool sendTo[MAX_TANKS] = {false}; // one packet per remote device
+  bool snapFresh = true; // next snapshot is accepted whatever its seq
+  unsigned char lastSnapshotSeq = 0;
+  float tankInvAcc[MAX_TANKS] = {0};
   unsigned int peerId[MAX_PEERS], peerIp[MAX_PEERS];
   string peerName[MAX_PEERS];
   unsigned char peerStatus[MAX_PEERS], peerCount[MAX_PEERS];
@@ -217,7 +222,7 @@ int main() {
   purrrr buttonH[0] = 40;
   buttonX[0] = width / 2 - buttonW[0] / 2;
   buttonY[0] = height / 2 - buttonH[0] / 2;
-  buttons = 26;
+  buttons = 31;
   for (int b = 1; b < buttons; b++) {
     buttonW[b] = 200;
     buttonH[b] = 40;
@@ -274,31 +279,23 @@ int main() {
     buttonX[b] = width / 2 - 180;
     buttonY[b] = 190 + (b - 20) * 46;
   }
-  // 26: lobby namebox, 27-28: match time buttons for host
-  buttonLayer[26] = 3;
-  buttonW[26] = 200;
-  buttonH[26] = 35;
+  // lobby, bottom left: 26 name box, 30 second name box, 29 add/remove local
+  // player. bottom right: 27-28 match time (host). all 35 high
+  for (int b = 26; b <= 30; b++) {
+    buttonLayer[b] = 3;
+    buttonW[b] = 200;
+    buttonH[b] = 35;
+  }
   buttonX[26] = 40;
-  buttonY[26] = height - 120;
-  buttonLayer[27] = 3;
-  buttonLayer[28] = 3;
-  buttonW[27] = buttonW[28] = 35;
-  buttonH[27] = buttonH[28] = 35;
-  buttonX[27] = width - 150;
-  buttonX[28] = width - 70;
-  buttonY[27] = buttonY[28] = height - 120;
-  buttonLayer[29] = 3;
-  buttonW[29] = 200;
-  buttonH[29] = 35;
-  buttonX[29] = 40;
-  buttonY[29] = height - 70;
-  buttonLayer[30] = 3;
-  buttonW[30] = 200;
-  buttonH[30] = 35;
+  buttonY[26] = height - 160;
   buttonX[30] = 250;
-  buttonY[30] = height - 70;
-
-  buttons = 31;
+  buttonY[30] = height - 160;
+  buttonX[29] = 40;
+  buttonY[29] = height - 115;
+  buttonW[27] = buttonW[28] = 35;
+  buttonX[27] = width - 250;
+  buttonX[28] = width - 75;
+  buttonY[27] = buttonY[28] = height - 160;
 
   Vector2f rocks[10] = {{width / 2.f, height * 2.f / 3.f},
                         {width * 1.f / 4.f, height * 2.f / 5.f},
@@ -567,10 +564,10 @@ int main() {
             if (typingName2 && playerName2.size() < 12)
               playerName2 += static_cast<char>(evnt->unicode);
           }
-          if (layer == 3 && lobbyRole != 0) {
-            tankName[myTank] = playerName;
-            if (myTank + 1 < tanks && tankDevice[myTank + 1] == deviceId)
-              tankName[myTank + 1] = playerName2;
+          if (layer == 3 && lobbyRole == 1) {
+            tankName[0] = playerName;
+            if (tanks > 1 && tankDevice[1] == deviceId)
+              tankName[1] = playerName2;
           }
         }
         // keyboard events
@@ -739,15 +736,25 @@ int main() {
         shotSeq[i] = 0;
       netTimer = 0.f;
       hostSeen = 0.f;
+      snapFresh = true;
       mouseJustPressed = false;
     }
 
     // --- NETWORK START / LEAVE ---
     bool inMatch = layer == 1 || layer == 2 || layer == 6;
+    // sendTo: first tank of every remote device, so each device gets one packet
+    for (int i = 0; i < MAX_TANKS; i++) {
+      sendTo[i] = i > 0 && i < tanks && tankDevice[i] != deviceId;
+      for (int j = 1; sendTo[i] && j < i; j++)
+        if (tankDevice[j] == tankDevice[i])
+          sendTo[i] = false;
+    }
     if (leaveNet) { // every way of leaving a lobby or match ends up here
       leaveNet = false;
       if (networkOk && lobbyRole == 1) { // host going away tells everyone
         for (int i = 1; i < tanks; i++) {
+          if (!sendTo[i])
+            continue;
           Packet p;
           p << U8(42) << U8(9) << deviceId;
           if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
@@ -773,17 +780,11 @@ int main() {
     if (sendStart && networkOk) {
       sendStart = false; // the host tells every client the match begins
       for (int i = 1; i < tanks; i++) {
-        if (tankDevice[i] == deviceId)
-          continue;
-        bool alreadySent = false;
-        for (int j = 1; j < i; j++)
-          if (tankDevice[j] == tankDevice[i])
-            alreadySent = true;
-        if (alreadySent)
+        if (!sendTo[i])
           continue;
         Packet p;
         p << U8(42) << U8(6) << deviceId << U8(tanks) << U8(i) << matchTime
-          << std::uint32_t(width) << std::uint32_t(height);
+          << std::uint32_t(baseW) << std::uint32_t(baseH);
         for (int k = 0; k < tanks; k++)
           p << tankName[k];
         for (int rep = 0; rep < 3;
@@ -841,13 +842,14 @@ int main() {
           for (int i = 0; i < tanks; i++)
             p << tankName[i];
           for (int i = 1; i < tanks; i++)
-            if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
-                Socket::Status::Done)
+            if (sendTo[i] && socket.send(p, IpAddress(tankIp[i]), PORT) ==
+                                 Socket::Status::Done)
               ;
         }
         if (lobbyRole == 2 && layer != 1 && layer != 6) { // heartbeat
           Packet p;
-          p << U8(42) << U8(4) << deviceId << playerName;
+          p << U8(42) << U8(4) << deviceId << playerName << localTanks
+            << playerName2;
           if (socket.send(p, IpAddress(hostAddr), PORT) == Socket::Status::Done)
             ;
         }
@@ -906,6 +908,8 @@ int main() {
             hostAddr = fromIp;
             hostSeen = 0.f;
             pendingTimer = 0.f;
+            inviteTimer = 0.f;
+            isHost = false;
             tanks = 0;
             layer = 3;
           }
@@ -967,10 +971,11 @@ int main() {
             hostSeen = 0.f;
           }
         } else if (type == 6) { // the host started a match
-          if (lobbyRole == 2 && fromIp == hostAddr && layer == 3) {
+          if (lobbyRole == 2 && fromIp == hostAddr &&
+              (layer == 3 || layer == 2)) {
             std::uint8_t count = 0, mine = 0;
             float mt = CLOCK_TIME;
-            std::uint32_t ww = width, hh = height;
+            std::uint32_t ww = baseW, hh = baseH;
             if (!(pkt >> count >> mine >> mt >> ww >> hh) || count == 0 ||
                 count > MAX_PLAYERS || mine >= count)
               continue;
@@ -1041,7 +1046,6 @@ int main() {
         } else if (type == 8) { // the host's picture of the whole match
           if (lobbyRole == 2 && fromIp == hostAddr && onlineMode &&
               (layer == 1 || layer == 2 || layer == 6)) {
-            static unsigned char lastSnapshotSeq = 0;
             std::uint8_t snapSeq = 0, phase = 1, count = 0;
             float tl = 0.f;
             std::uint16_t gk = 0, rk = 0;
@@ -1049,8 +1053,9 @@ int main() {
               continue; // validate read
             unsigned char diff =
                 static_cast<unsigned char>(snapSeq - lastSnapshotSeq);
-            if (diff == 0 || diff > 127)
+            if (!snapFresh && (diff == 0 || diff > 127))
               continue; // drop stale snapshots
+            snapFresh = false;
             lastSnapshotSeq = snapSeq;
             hostSeen = 0.f;
             timeLeft = tl;
@@ -1058,12 +1063,16 @@ int main() {
             redKills = rk;
             if (phase == 2 && layer != 2)
               layer = 2;
-            for (int i = 0; i < count && i < MAX_PLAYERS && i < tanks; i++) {
-              float x, y, a, sh, bo, st;
-              std::uint8_t ammo, inv, shots;
-              std::uint16_t deaths;
+            for (int i = 0; i < count && i < MAX_PLAYERS; i++) {
+              float x = 0.f, y = 0.f, a = 0.f, sh = 0.f, bo = 0.f, st = 0.f;
+              std::uint8_t ammo = 0, inv = 0, shots = 1;
+              std::uint16_t deaths = 0;
               pkt >> x >> y >> a >> ammo >> inv >> sh >> bo >> shots >> st >>
                   deaths;
+              if (i >= tanks)
+                continue; // still read it, so the rest stays lined up
+              // our own tanks (one or two on this device) are never overwritten
+              bool mine = i == myTank || tankDevice[i] == deviceId;
               if (deaths != tankDeaths[i]) { // that tank just blew up
                 scorchX[nextScorch] = tankX[i];
                 scorchY[nextScorch] = tankY[i];
@@ -1073,17 +1082,16 @@ int main() {
                 hitSnd[hitIdx].play();
                 hitIdx = (hitIdx + 1) % 2;
                 tankDeaths[i] = deaths;
-                if (i == myTank) { // we respawned, take the new spot
-                  tankX[i] = x;    // not tankLX or Y as our own tank's
-                  tankY[i] = y;    // -position won't be interpolated
+                if (mine) {     // we respawned, take the new spot
+                  tankX[i] = x; // not tankLX or Y as our own tank's
+                  tankY[i] = y; // -position won't be interpolated
                   tankA[i] = a;
                   tankV[i] = tankW[i] = 0.f;
                   tankLastX[i] = x;
                   tankLastY[i] = y;
                 }
               }
-              if (i != myTank) { // TODO: We are recieiving the position of
-                                 // other tanks
+              if (!mine) { // other players: take position and ammo
                 tankX[i] = x;
                 tankY[i] = y;
                 tankA[i] = a;
@@ -1116,21 +1124,18 @@ int main() {
             }
             for (int k = 0; k < nb; k++) {
               std::int16_t bx = 0, by = 0;
-              pkt >> bx >> by;
+              std::uint8_t src = 0;
+              pkt >> bx >> by >> src;
               ballsX[k] = static_cast<float>(bx);
               ballsY[k] = static_cast<float>(by);
               ballsA[k] = 0.f;
+              ballSource[k] = src < MAX_PLAYERS ? src : 0; // for the colour
               ballState[k] = 1;
             }
             lowerBall = 0;
             upperBall = nb > 0 ? nb - 1 : 0;
             balls = nb;
             nextBall = nb % ballPool;
-            for (int k = nb; k <= upperBall; k++)
-              ballState[k] = 0; // balls that are gone since the last snapshot
-            lowerBall = 0;
-            upperBall = nb > 0 ? nb - 1 : 0;
-            balls = nb;
             for (int k = 0; k < MAX_GLARES; k++) {
               std::uint8_t g = 0;
               std::int16_t gx = 0, gy = 0;
@@ -1157,6 +1162,8 @@ int main() {
       // remove disconnected players
       if (lobbyRole == 1) {
         for (int i = 1; i < tanks; i++) {
+          if (tankDevice[i] == deviceId)
+            continue; // our own second tank never times out
           tankSeen[i] += deltaTime;
           if (tankSeen[i] <= NET_TIMEOUT)
             continue;
@@ -1461,9 +1468,10 @@ int main() {
       // tank ammo and cooldowns
       for (int i = 0; i <= upperTank; i++) {
         if (tankInv[i] > 0) {
-          tankInv[i] -= static_cast<unsigned short>(deltaTime * 60.f);
-          if (tankInv[i] > 60000)
-            tankInv[i] = 0; // underflow guard
+          tankInvAcc[i] += deltaTime * 60.f;
+          unsigned short ticks = static_cast<unsigned short>(tankInvAcc[i]);
+          tankInvAcc[i] -= ticks;
+          tankInv[i] = ticks >= tankInv[i] ? 0 : tankInv[i] - ticks;
         }
         // power up timers run out here (the host's numbers win on clients)
         if (tankShield[i] > 0.f)
@@ -1477,7 +1485,7 @@ int main() {
         }
         // clients only run ammo for their own tank, the rest comes in
         // snapshots
-        if (!isHost && i != myTank)
+        if (!isHost && i != myTank && tankDevice[i] != deviceId)
           continue;
         if (tankCooldown[i] >= 0.f)
           tankCooldown[i] -= deltaTime;
@@ -1761,15 +1769,15 @@ int main() {
         for (int k = 0; k < ballPool && sent < nb; k++) {
           if (!ballState[k])
             continue;
-          p << I16(ballsX[k]) << I16(ballsY[k]);
+          p << I16(ballsX[k]) << I16(ballsY[k]) << U8(ballSource[k]);
           sent++;
         }
         for (int k = 0; k < MAX_GLARES; k++)
           p << U8(glare[k] > 0 ? glare[k] : 0) << I16(glareX[k])
             << I16(glareY[k]);
         for (int i = 1; i < tanks; i++)
-          if (socket.send(p, IpAddress(tankIp[i]), PORT) ==
-              Socket::Status::Done)
+          if (sendTo[i] && socket.send(p, IpAddress(tankIp[i]), PORT) ==
+                               Socket::Status::Done)
             ;
         netTimer = 0.f;
       }
@@ -1985,6 +1993,8 @@ int main() {
         shown = layer == 3 && lobbyRole != 2 && networkOk && (bi - 20) < peers;
       if (bi == 27 || bi == 28)
         shown = layer == 3 && lobbyRole == 1; // +/- only for host
+      if (bi == 29)
+        shown = layer == 3 && lobbyRole != 2; // clients can't change it
       if (bi == 30)
         shown = layer == 3 && localTanks > 1; // name 2 only if active
       if (bi == 1 && !networkOk)
@@ -2095,12 +2105,14 @@ int main() {
               // they already host a lobby, so we join it as a client
               pendingId = inviteId;
               pendingTimer = 10.f;
+              inviteTimer = 0.f;
               Packet p;
               p << U8(42) << U8(4) << deviceId << playerName << localTanks
                 << playerName2;
               if (socket.send(p, IpAddress(inviteIp), PORT) ==
                   Socket::Status::Done)
                 ;
+              mouseJustPressed = false;
             } else {
               // the person who sent the invite becomes the host.
               // joining user connects as a client
@@ -2198,8 +2210,7 @@ int main() {
           }
           break;
         case 29:
-          buttonText.setString(localTanks == 1 ? "Add local player"
-                                               : "Remove local player");
+          buttonText.setString(localTanks == 1 ? "Add local" : "Remove local");
           if (clicked && lobbyRole != 2 &&
               (lobbyRole == 0 || tanks == localTanks)) {
             localTanks = localTanks == 1 ? 2 : 1;
@@ -2345,16 +2356,18 @@ int main() {
           window.draw(infoText);
         }
       }
-      infoText.setCharacterSize(20); // who we are
-      infoText.setString("you are: " + playerName);
+      infoText.setCharacterSize(20); // small stat under the buttons
+      infoText.setString("packets recieved: " + to_string(packetsRec));
       infoText.setPosition({40.f, baseH - 60.f});
       window.draw(infoText);
-      infoText.setString("packets recieved: " + to_string(packetsRec));
-      infoText.setPosition({40.f, baseH - 90.f});
-      window.draw(infoText);
-      if (lobbyRole == 1) {
+      if (lobbyRole == 1) { // match time, centered between the - and + buttons
+        infoText.setCharacterSize(22);
         infoText.setString("Time: " + to_string(int(matchTime)) + "s");
-        infoText.setPosition({float(width - 260), float(height - 115)});
+        FloatRect mb = infoText.getLocalBounds();
+        infoText.setOrigin(
+            {mb.position.x + mb.size.x / 2.f, mb.position.y + mb.size.y / 2.f});
+        infoText.setPosition({baseW - 250.f + 35.f + (175.f - 35.f) / 2.f,
+                              baseH - 160.f + 17.5f});
         window.draw(infoText);
       }
     }
@@ -2454,6 +2467,8 @@ int main() {
   // in case of closed window broadcast leave msg
   if (networkOk && lobbyRole == 1) {
     for (int i = 1; i < tanks; i++) {
+      if (!sendTo[i])
+        continue;
       Packet p;
       p << U8(42) << U8(9) << deviceId;
       if (socket.send(p, IpAddress(tankIp[i]), PORT) == Socket::Status::Done)
