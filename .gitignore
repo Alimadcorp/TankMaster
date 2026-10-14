@@ -3,4 +3,5 @@
 .vscode/
 *.keystore
 *.jks
-settings.ini
+build/
+*.ini
