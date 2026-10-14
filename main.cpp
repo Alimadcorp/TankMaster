@@ -1886,7 +1886,7 @@ int main() {
         }
         // draw the ammobar only for our tank
         // TODO
-        if (i == myTank || !onlineMode) {
+        if (tankDevice[i] == deviceId || !onlineMode) {
           ammoBar.setTexture(ammoT[tankAmmo[i] % 6]);
           ammoBar.setPosition({tankLX[i], tankLY[i] + 40.f});
           ammoBar.setColor(
